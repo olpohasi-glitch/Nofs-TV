@@ -6,7 +6,8 @@ import {
   BreakingNewsItem,
   Comment,
   MediaItem,
-  SiteSettings
+  SiteSettings,
+  NOFS_TV_LOGO_URL
 } from '../types';
 import {
   INITIAL_SETTINGS,
@@ -123,7 +124,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addressDhaka: '',
         contactPhone: '',
         founderName: 'M. Ajmol Hussain Jakir',
-        founderRole: 'প্রতিষ্ঠাতা ও প্রকাশক (Founder & Publisher)'
+        founderRole: 'প্রতিষ্ঠাতা ও প্রকাশক (Founder & Publisher)',
+        logoUrl: NOFS_TV_LOGO_URL
       };
     } catch {
       return INITIAL_SETTINGS;

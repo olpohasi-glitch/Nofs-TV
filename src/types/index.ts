@@ -84,9 +84,8 @@ export interface SiteSettings {
   logoUrl?: string;
 }
 
-export const NOFS_TV_LOGO_URL = '/logo.png';
-export const NOFS_TV_LOGO_REMOTE_URL =
-  'https://res.cloudinary.com/aumtqxwm/image/upload/f_auto,q_auto/WhatsApp_Image_2026-10-07_at_10.39.16_PM';
+export const NOFS_TV_LOGO_URL =
+  'https://res.cloudinary.com/aumtqxwm/image/upload/f_auto,q_auto/file_00000000b0f4820881a29eda7e4e58c4_1';
 
 export type PublicView = 'home' | 'article' | 'category' | 'search' | 'admin-login' | 'reporters' | 'epaper';
 
