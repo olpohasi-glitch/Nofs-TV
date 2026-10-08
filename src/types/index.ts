@@ -14,20 +14,25 @@ export interface NewsArticle {
   title: string;
   subtitle?: string;
   slug: string;
+  shortDescription?: string;
   summary: string;
   content: string;
   category: string;
-  reporterId: string;
+  reporter?: string;
+  reporterId?: string;
   reporterName: string;
-  reporterRole: string;
+  reporterRole?: string;
+  featuredImage?: string;
   image: string;
+  additionalImages?: string[];
   imageCaption?: string;
-  publishDate: string; // Bengali or formatted date e.g. "৭ অক্টোবর ২০২৬"
-  publishTime: string; // e.g. "দুপুর ২:১৫"
+  publishDate: string;
+  publishTime?: string;
   createdAt: string;
+  updatedAt?: string;
   isBreaking: boolean;
   isFeatured: boolean;
-  status: 'published' | 'draft';
+  status: 'published' | 'draft' | 'archived';
   views: number;
   tags: string[];
 }
@@ -51,7 +56,7 @@ export interface BreakingNewsItem {
 export interface Comment {
   id: string;
   articleId: string;
-  articleTitle: string;
+  articleTitle?: string;
   authorName: string;
   email: string;
   content: string;
@@ -93,12 +98,16 @@ export type AdminTab =
   | 'dashboard'
   | 'add-news'
   | 'all-news'
-  | 'edit-news'
-  | 'categories'
+  | 'draft-news'
+  | 'published-news'
   | 'breaking-news'
   | 'featured-news'
+  | 'categories'
   | 'reporters'
-  | 'comments'
   | 'media'
+  | 'comments'
   | 'settings'
+  | 'social-settings'
+  | 'epaper-settings'
+  | 'edit-news'
   | 'profile';

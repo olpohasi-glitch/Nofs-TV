@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { User as FirebaseUser } from 'firebase/auth';
 import {
   NewsArticle,
   Category,
@@ -18,6 +19,35 @@ import {
   INITIAL_COMMENTS,
   INITIAL_MEDIA
 } from '../data/initialData';
+import {
+  adminSignIn,
+  adminSignOut,
+  subscribeToAuth,
+  initializeAdminAccount,
+  OFFICIAL_ADMIN_EMAIL
+} from '../services/firebaseAuth';
+import {
+  subscribeToNews,
+  saveNewsToFirestore,
+  deleteNewsFromFirestore,
+  subscribeToCategories,
+  saveCategoryToFirestore,
+  deleteCategoryFromFirestore,
+  subscribeToReporters,
+  saveReporterToFirestore,
+  deleteReporterFromFirestore,
+  subscribeToMedia,
+  saveMediaItemToFirestore,
+  deleteMediaItemFromFirestore,
+  subscribeToComments,
+  addCommentToFirestore,
+  updateCommentStatusInFirestore,
+  deleteCommentFromFirestore,
+  subscribeToSettings,
+  saveSettingsToFirestore,
+  seedInitialFirestoreData
+} from '../services/firestoreService';
+import { testFirestoreConnection } from '../lib/firebase';
 
 interface NewsContextType {
   news: NewsArticle[];
@@ -27,280 +57,243 @@ interface NewsContextType {
   comments: Comment[];
   media: MediaItem[];
   settings: SiteSettings;
+  // Firebase Auth State
+  firebaseUser: FirebaseUser | null;
   isAdminLoggedIn: boolean;
+  isAuthLoading: boolean;
   adminUser: { name: string; role: string; email: string };
-  loginAdmin: (userOrEmail: string, pass: string) => boolean;
-  logoutAdmin: () => void;
-  // News operations
-  addNews: (article: Omit<NewsArticle, 'id' | 'createdAt' | 'views'>) => string;
-  updateNews: (id: string, article: Partial<NewsArticle>) => void;
-  deleteNews: (id: string) => void;
-  toggleBreakingStatus: (id: string) => void;
-  toggleFeaturedStatus: (id: string) => void;
-  togglePublishStatus: (id: string) => void;
+  loginAdmin: (password: string) => Promise<void>;
+  setupAdminAccount: (password: string) => Promise<void>;
+  logoutAdmin: () => Promise<void>;
+  // Firestore Connection State
+  isFirestoreConnected: boolean;
+  seedFirestore: () => Promise<{ seeded: boolean; message: string }>;
+  // News operations (Persistent to Firestore)
+  addNews: (article: Omit<NewsArticle, 'id' | 'createdAt' | 'views'>) => Promise<string>;
+  updateNews: (id: string, article: Partial<NewsArticle>) => Promise<void>;
+  deleteNews: (id: string) => Promise<void>;
+  toggleBreakingStatus: (id: string) => Promise<void>;
+  toggleFeaturedStatus: (id: string) => Promise<void>;
+  togglePublishStatus: (id: string) => Promise<void>;
   incrementViews: (id: string) => void;
-  // Breaking news ticker operations
+  // Breaking news ticker
   addBreakingNews: (text: string, articleId?: string) => void;
   updateBreakingNews: (id: string, text: string, isActive: boolean, articleId?: string) => void;
   deleteBreakingNews: (id: string) => void;
   toggleBreakingNewsActive: (id: string) => void;
   // Category operations
-  addCategory: (name: string, slug: string, description: string) => void;
-  updateCategory: (id: string, name: string, slug: string, description: string) => void;
-  deleteCategory: (id: string) => void;
+  addCategory: (name: string, slug: string, description: string) => Promise<void>;
+  updateCategory: (id: string, name: string, slug: string, description: string) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
   // Reporter operations
-  addReporter: (reporter: Omit<Reporter, 'id' | 'articleCount'>) => void;
-  updateReporter: (id: string, reporter: Partial<Reporter>) => void;
-  deleteReporter: (id: string) => void;
+  addReporter: (reporter: Omit<Reporter, 'id' | 'articleCount'>) => Promise<void>;
+  updateReporter: (id: string, reporter: Partial<Reporter>) => Promise<void>;
+  deleteReporter: (id: string) => Promise<void>;
   // Comments operations
-  addComment: (articleId: string, articleTitle: string, authorName: string, email: string, content: string) => void;
-  approveComment: (id: string) => void;
-  hideComment: (id: string) => void;
-  deleteComment: (id: string) => void;
+  addComment: (articleId: string, articleTitle: string, authorName: string, email: string, content: string) => Promise<void>;
+  approveComment: (id: string) => Promise<void>;
+  hideComment: (id: string) => Promise<void>;
+  deleteComment: (id: string) => Promise<void>;
   // Media library operations
-  addMedia: (name: string, url: string, size?: string) => void;
-  deleteMedia: (id: string) => void;
+  addMedia: (name: string, url: string, size?: string) => Promise<void>;
+  deleteMedia: (id: string) => Promise<void>;
   // Settings operations
-  updateSettings: (newSettings: Partial<SiteSettings>) => void;
-  resetToDefaults: () => void;
+  updateSettings: (newSettings: Partial<SiteSettings>) => Promise<void>;
+  resetToDefaults: () => Promise<void>;
 }
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  NEWS: 'nofs_tv_news_v3',
-  CATEGORIES: 'nofs_tv_categories_v3',
-  REPORTERS: 'nofs_tv_reporters_v3',
-  BREAKING: 'nofs_tv_breaking_v3',
-  COMMENTS: 'nofs_tv_comments_v3',
-  MEDIA: 'nofs_tv_media_v3',
-  SETTINGS: 'nofs_tv_settings_v3',
-  AUTH: 'nofs_tv_auth_v3',
-};
-
 export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [news, setNews] = useState<NewsArticle[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.NEWS);
-    return saved ? JSON.parse(saved) : INITIAL_NEWS;
-  });
+  // Database States (synced with Cloud Firestore)
+  const [news, setNews] = useState<NewsArticle[]>(INITIAL_NEWS);
+  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [reporters, setReporters] = useState<Reporter[]>(INITIAL_REPORTERS);
+  const [breakingNews, setBreakingNews] = useState<BreakingNewsItem[]>(INITIAL_BREAKING_NEWS);
+  const [comments, setComments] = useState<Comment[]>(INITIAL_COMMENTS);
+  const [media, setMedia] = useState<MediaItem[]>(INITIAL_MEDIA);
+  const [settings, setSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
 
-  const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-    return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
-  });
+  // Auth and Firestore Connection States
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [isFirestoreConnected, setIsFirestoreConnected] = useState<boolean>(false);
 
-  const [reporters, setReporters] = useState<Reporter[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.REPORTERS);
-    return saved ? JSON.parse(saved) : INITIAL_REPORTERS;
-  });
+  // 1. Subscribe to Firebase Auth
+  useEffect(() => {
+    const unsubscribe = subscribeToAuth(user => {
+      setFirebaseUser(user);
+      setIsAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const [breakingNews, setBreakingNews] = useState<BreakingNewsItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.BREAKING);
-    return saved ? JSON.parse(saved) : INITIAL_BREAKING_NEWS;
-  });
+  // 2. Test Firestore connection and subscribe to real-time collections
+  useEffect(() => {
+    testFirestoreConnection().then(res => {
+      setIsFirestoreConnected(res.connected);
+    });
 
-  const [comments, setComments] = useState<Comment[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.COMMENTS);
-    return saved ? JSON.parse(saved) : INITIAL_COMMENTS;
-  });
+    const unsubNews = subscribeToNews(firestoreArticles => {
+      if (firestoreArticles.length > 0) {
+        setNews(firestoreArticles);
+      }
+    });
 
-  const [media, setMedia] = useState<MediaItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MEDIA);
-    return saved ? JSON.parse(saved) : INITIAL_MEDIA;
-  });
+    const unsubCategories = subscribeToCategories(firestoreCategories => {
+      if (firestoreCategories.length > 0) {
+        setCategories(firestoreCategories);
+      }
+    });
 
-  const [settings, setSettings] = useState<SiteSettings>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (!saved) return INITIAL_SETTINGS;
-    try {
-      const parsed = JSON.parse(saved);
-      return {
-        ...INITIAL_SETTINGS,
-        ...parsed,
-        siteName: 'NOFS TV',
-        tagline: 'সত্যের সন্ধানে, মানুষের পাশে',
-        contactEmail: 'nofstv.bd@gmail.com',
-        addressSylhet: 'প্রধান কার্যালয়: সিলেট, বাংলাদেশ',
-        addressDhaka: '',
-        contactPhone: '',
-        founderName: 'M. Ajmol Hussain Jakir',
-        founderRole: 'প্রতিষ্ঠাতা ও প্রকাশক (Founder & Publisher)',
-        logoUrl: NOFS_TV_LOGO_URL
-      };
-    } catch {
-      return INITIAL_SETTINGS;
-    }
-  });
+    const unsubReporters = subscribeToReporters(firestoreReporters => {
+      if (firestoreReporters.length > 0) {
+        setReporters(firestoreReporters);
+      }
+    });
 
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.AUTH);
-    return saved === 'true';
-  });
+    const unsubComments = subscribeToComments(firestoreComments => {
+      if (firestoreComments.length > 0) {
+        setComments(firestoreComments);
+      }
+    });
+
+    const unsubMedia = subscribeToMedia(firestoreMedia => {
+      if (firestoreMedia.length > 0) {
+        setMedia(firestoreMedia);
+      }
+    });
+
+    const unsubSettings = subscribeToSettings(firestoreSettings => {
+      setSettings(firestoreSettings);
+    });
+
+    return () => {
+      unsubNews();
+      unsubCategories();
+      unsubReporters();
+      unsubComments();
+      unsubMedia();
+      unsubSettings();
+    };
+  }, []);
+
+  const isAdminLoggedIn = Boolean(
+    firebaseUser && firebaseUser.email === OFFICIAL_ADMIN_EMAIL
+  );
 
   const adminUser = {
     name: settings.founderName || 'M. Ajmol Hussain Jakir',
     role: settings.founderRole || 'প্রতিষ্ঠাতা ও প্রকাশক',
-    email: settings.contactEmail || 'nofstv.bd@gmail.com'
+    email: OFFICIAL_ADMIN_EMAIL
   };
 
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.NEWS, JSON.stringify(news));
-  }, [news]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-  }, [categories]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.REPORTERS, JSON.stringify(reporters));
-  }, [reporters]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.BREAKING, JSON.stringify(breakingNews));
-  }, [breakingNews]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(comments));
-  }, [comments]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MEDIA, JSON.stringify(media));
-  }, [media]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-  }, [settings]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.AUTH, isAdminLoggedIn ? 'true' : 'false');
-  }, [isAdminLoggedIn]);
-
-  // Auth
-  const loginAdmin = (userOrEmail: string, pass: string): boolean => {
-    // Allows standard admin credentials or quick demo access
-    if (
-      (userOrEmail.trim().toLowerCase() === 'admin@nofstv.com' ||
-        userOrEmail.trim().toLowerCase() === 'admin' ||
-        userOrEmail.trim().toLowerCase() === 'ajmol@nofstv.com' ||
-        userOrEmail.trim().toLowerCase() === 'nofstv') &&
-      (pass === 'admin123' || pass === 'admin' || pass === '123456')
-    ) {
-      setIsAdminLoggedIn(true);
-      return true;
-    }
-    // Also accept any non-empty password in demo mode if requested
-    if (userOrEmail.trim().length > 3 && pass.length >= 4) {
-      setIsAdminLoggedIn(true);
-      return true;
-    }
-    return false;
+  // Auth Actions
+  const loginAdmin = async (password: string) => {
+    await adminSignIn(password);
   };
 
-  const logoutAdmin = () => {
-    setIsAdminLoggedIn(false);
+  const setupAdminAccount = async (password: string) => {
+    await initializeAdminAccount(password);
   };
 
-  // News Actions
-  const addNews = (articleData: Omit<NewsArticle, 'id' | 'createdAt' | 'views'>): string => {
-    const id = `news-${Date.now()}`;
+  const logoutAdmin = async () => {
+    await adminSignOut();
+  };
+
+  const seedFirestore = async () => {
+    const result = await seedInitialFirestoreData();
+    return result;
+  };
+
+  // ==========================================
+  // NEWS OPERATIONS (FIRESTORE)
+  // ==========================================
+
+  const addNews = async (articleData: Omit<NewsArticle, 'id' | 'createdAt' | 'views'>): Promise<string> => {
+    const newId = `news-${Date.now()}`;
     const newArticle: NewsArticle = {
       ...articleData,
-      id,
+      id: newId,
       createdAt: new Date().toISOString(),
-      views: 1
+      views: 0,
+      shortDescription: articleData.shortDescription || articleData.summary || '',
+      featuredImage: articleData.featuredImage || articleData.image || '',
+      reporter: articleData.reporter || articleData.reporterName || 'NOFS TV নিউজরুম',
+      additionalImages: articleData.additionalImages || []
     };
 
+    // Optimistic UI update
     setNews(prev => [newArticle, ...prev]);
 
-    // If marked as breaking, add to breaking ticker automatically
-    if (newArticle.isBreaking) {
-      addBreakingNews(newArticle.title, id);
-    }
-
-    return id;
+    // Persist to Cloud Firestore
+    await saveNewsToFirestore(newArticle);
+    return newId;
   };
 
-  const updateNews = (id: string, articleData: Partial<NewsArticle>) => {
-    setNews(prev =>
-      prev.map(item => (item.id === id ? { ...item, ...articleData } : item))
-    );
+  const updateNews = async (id: string, updatedFields: Partial<NewsArticle>) => {
+    const target = news.find(n => n.id === id);
+    if (!target) return;
+    const merged: NewsArticle = {
+      ...target,
+      ...updatedFields,
+      updatedAt: new Date().toISOString()
+    };
+    setNews(prev => prev.map(item => (item.id === id ? merged : item)));
+    await saveNewsToFirestore(merged);
   };
 
-  const deleteNews = (id: string) => {
+  const deleteNews = async (id: string) => {
     setNews(prev => prev.filter(item => item.id !== id));
-    setBreakingNews(prev => prev.filter(item => item.articleId !== id));
-    setComments(prev => prev.filter(item => item.articleId !== id));
+    await deleteNewsFromFirestore(id);
   };
 
-  const toggleBreakingStatus = (id: string) => {
-    setNews(prev =>
-      prev.map(item => {
-        if (item.id === id) {
-          const nextState = !item.isBreaking;
-          if (nextState) {
-            addBreakingNews(item.title, item.id);
-          } else {
-            setBreakingNews(bList => bList.filter(b => b.articleId !== id));
-          }
-          return { ...item, isBreaking: nextState };
-        }
-        return item;
-      })
-    );
+  const toggleBreakingStatus = async (id: string) => {
+    const target = news.find(n => n.id === id);
+    if (!target) return;
+    const updated: NewsArticle = { ...target, isBreaking: !target.isBreaking };
+    setNews(prev => prev.map(item => (item.id === id ? updated : item)));
+    await saveNewsToFirestore(updated);
   };
 
-  const toggleFeaturedStatus = (id: string) => {
-    setNews(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, isFeatured: !item.isFeatured } : item
-      )
-    );
+  const toggleFeaturedStatus = async (id: string) => {
+    const target = news.find(n => n.id === id);
+    if (!target) return;
+    const updated: NewsArticle = { ...target, isFeatured: !target.isFeatured };
+    setNews(prev => prev.map(item => (item.id === id ? updated : item)));
+    await saveNewsToFirestore(updated);
   };
 
-  const togglePublishStatus = (id: string) => {
-    setNews(prev =>
-      prev.map(item =>
-        item.id === id
-          ? {
-              ...item,
-              status: item.status === 'published' ? 'draft' : 'published'
-            }
-          : item
-      )
-    );
+  const togglePublishStatus = async (id: string) => {
+    const target = news.find(n => n.id === id);
+    if (!target) return;
+    const nextStatus = target.status === 'published' ? 'draft' : 'published';
+    const updated: NewsArticle = { ...target, status: nextStatus };
+    setNews(prev => prev.map(item => (item.id === id ? updated : item)));
+    await saveNewsToFirestore(updated);
   };
 
   const incrementViews = (id: string) => {
     setNews(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, views: (item.views || 0) + 1 } : item
-      )
+      prev.map(item => (item.id === id ? { ...item, views: (item.views || 0) + 1 } : item))
     );
   };
 
-  // Breaking News Ticker Actions
+  // Breaking News ticker
   const addBreakingNews = (text: string, articleId?: string) => {
     const newItem: BreakingNewsItem = {
-      id: `brk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: `break-${Date.now()}`,
       text,
-      articleId,
+      createdAt: new Date().toISOString(),
       isActive: true,
-      createdAt: new Date().toISOString()
+      articleId
     };
     setBreakingNews(prev => [newItem, ...prev]);
   };
 
-  const updateBreakingNews = (
-    id: string,
-    text: string,
-    isActive: boolean,
-    articleId?: string
-  ) => {
+  const updateBreakingNews = (id: string, text: string, isActive: boolean, articleId?: string) => {
     setBreakingNews(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, text, isActive, articleId } : item
-      )
+      prev.map(item => (item.id === id ? { ...item, text, isActive, articleId } : item))
     );
   };
 
@@ -310,121 +303,147 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const toggleBreakingNewsActive = (id: string) => {
     setBreakingNews(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, isActive: !item.isActive } : item
-      )
+      prev.map(item => (item.id === id ? { ...item, isActive: !item.isActive } : item))
     );
   };
 
-  // Categories Actions
-  const addCategory = (name: string, slug: string, description: string) => {
+  // Category Operations
+  const addCategory = async (name: string, slug: string, description: string) => {
     const newCat: Category = {
       id: `cat-${Date.now()}`,
       name,
-      slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+      slug,
       description,
       order: categories.length + 1
     };
     setCategories(prev => [...prev, newCat]);
+    await saveCategoryToFirestore(newCat);
   };
 
-  const updateCategory = (id: string, name: string, slug: string, description: string) => {
-    setCategories(prev =>
-      prev.map(cat => (cat.id === id ? { ...cat, name, slug, description } : cat))
+  const updateCategory = async (id: string, name: string, slug: string, description: string) => {
+    const updated = categories.map(c =>
+      c.id === id ? { ...c, name, slug, description } : c
     );
+    setCategories(updated);
+    const cat = updated.find(c => c.id === id);
+    if (cat) await saveCategoryToFirestore(cat);
   };
 
-  const deleteCategory = (id: string) => {
-    setCategories(prev => prev.filter(cat => cat.id !== id));
+  const deleteCategory = async (id: string) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+    await deleteCategoryFromFirestore(id);
   };
 
-  // Reporter Actions
-  const addReporter = (reporterData: Omit<Reporter, 'id' | 'articleCount'>) => {
-    const newReporter: Reporter = {
+  // Reporter Operations
+  const addReporter = async (reporterData: Omit<Reporter, 'id' | 'articleCount'>) => {
+    const newRep: Reporter = {
       ...reporterData,
       id: `rep-${Date.now()}`,
       articleCount: 0
     };
-    setReporters(prev => [...prev, newReporter]);
+    setReporters(prev => [...prev, newRep]);
+    await saveReporterToFirestore(newRep);
   };
 
-  const updateReporter = (id: string, reporterData: Partial<Reporter>) => {
-    setReporters(prev =>
-      prev.map(rep => (rep.id === id ? { ...rep, ...reporterData } : rep))
+  const updateReporter = async (id: string, reporterData: Partial<Reporter>) => {
+    const updated = reporters.map(r =>
+      r.id === id ? { ...r, ...reporterData } : r
     );
+    setReporters(updated);
+    const rep = updated.find(r => r.id === id);
+    if (rep) await saveReporterToFirestore(rep);
   };
 
-  const deleteReporter = (id: string) => {
-    setReporters(prev => prev.filter(rep => rep.id !== id));
+  const deleteReporter = async (id: string) => {
+    setReporters(prev => prev.filter(r => r.id !== id));
+    await deleteReporterFromFirestore(id);
   };
 
-  // Comments Actions
-  const addComment = (
+  // Comments Operations
+  const addComment = async (
     articleId: string,
     articleTitle: string,
     authorName: string,
     email: string,
     content: string
   ) => {
-    const newComment: Comment = {
-      id: `cmt-${Date.now()}`,
+    const commentId = await addCommentToFirestore({
       articleId,
-      articleTitle,
       authorName,
       email,
-      content,
-      createdAt: 'এখন মাত্র',
-      status: 'approved' // Automatically approved for interactive demo experience
-    };
-    setComments(prev => [newComment, ...prev]);
+      content
+    });
+    setComments(prev => [
+      {
+        id: commentId,
+        articleId,
+        articleTitle,
+        authorName,
+        email,
+        content,
+        createdAt: new Date().toISOString(),
+        status: 'pending'
+      },
+      ...prev
+    ]);
   };
 
-  const approveComment = (id: string) => {
+  const approveComment = async (id: string) => {
     setComments(prev =>
-      prev.map(cmt => (cmt.id === id ? { ...cmt, status: 'approved' } : cmt))
+      prev.map(c => (c.id === id ? { ...c, status: 'approved' } : c))
     );
+    await updateCommentStatusInFirestore(id, 'approved');
   };
 
-  const hideComment = (id: string) => {
+  const hideComment = async (id: string) => {
     setComments(prev =>
-      prev.map(cmt => (cmt.id === id ? { ...cmt, status: 'hidden' } : cmt))
+      prev.map(c => (c.id === id ? { ...c, status: 'hidden' } : c))
     );
+    await updateCommentStatusInFirestore(id, 'hidden');
   };
 
-  const deleteComment = (id: string) => {
-    setComments(prev => prev.filter(cmt => cmt.id !== id));
+  const deleteComment = async (id: string) => {
+    setComments(prev => prev.filter(c => c.id !== id));
+    await deleteCommentFromFirestore(id);
   };
 
-  // Media Actions
-  const addMedia = (name: string, url: string, size = '1.5 MB') => {
+  // Media Operations
+  const addMedia = async (name: string, url: string, size: string = '1.2 MB') => {
     const newItem: MediaItem = {
       id: `med-${Date.now()}`,
       name,
       url,
       size,
       type: 'image/jpeg',
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: new Date().toISOString()
     };
     setMedia(prev => [newItem, ...prev]);
+    await saveMediaItemToFirestore(newItem);
   };
 
-  const deleteMedia = (id: string) => {
-    setMedia(prev => prev.filter(item => item.id !== id));
+  const deleteMedia = async (id: string) => {
+    setMedia(prev => prev.filter(m => m.id !== id));
+    await deleteMediaItemFromFirestore(id);
   };
 
-  // Settings Actions
-  const updateSettings = (newSettings: Partial<SiteSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+  // Settings Operations
+  const updateSettings = async (newSettings: Partial<SiteSettings>) => {
+    const merged: SiteSettings = {
+      ...settings,
+      ...newSettings,
+      siteName: 'NOFS TV',
+      contactEmail: 'nofstv.bd@gmail.com',
+      founderName: 'M. Ajmol Hussain Jakir',
+      addressSylhet: 'প্রধান কার্যালয়: সিলেট, বাংলাদেশ',
+      logoUrl: NOFS_TV_LOGO_URL
+    };
+    setSettings(merged);
+    await saveSettingsToFirestore(merged);
   };
 
-  const resetToDefaults = () => {
-    setNews(INITIAL_NEWS);
-    setCategories(INITIAL_CATEGORIES);
-    setReporters(INITIAL_REPORTERS);
-    setBreakingNews(INITIAL_BREAKING_NEWS);
-    setComments(INITIAL_COMMENTS);
-    setMedia(INITIAL_MEDIA);
+  const resetToDefaults = async () => {
     setSettings(INITIAL_SETTINGS);
+    await saveSettingsToFirestore(INITIAL_SETTINGS);
   };
 
   return (
@@ -437,10 +456,15 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         comments,
         media,
         settings,
+        firebaseUser,
         isAdminLoggedIn,
+        isAuthLoading,
         adminUser,
         loginAdmin,
+        setupAdminAccount,
         logoutAdmin,
+        isFirestoreConnected,
+        seedFirestore,
         addNews,
         updateNews,
         deleteNews,
@@ -473,7 +497,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useNews = () => {
+export const useNews = (): NewsContextType => {
   const context = useContext(NewsContext);
   if (!context) {
     throw new Error('useNews must be used within a NewsProvider');

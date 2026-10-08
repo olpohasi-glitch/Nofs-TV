@@ -21,12 +21,14 @@ interface AdminAllNewsProps {
   onAddNew: () => void;
   onEditArticle: (article: NewsArticle) => void;
   onViewPublicArticle?: (id: string) => void;
+  defaultStatus?: 'all' | 'published' | 'draft' | 'featured';
 }
 
 export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
   onAddNew,
   onEditArticle,
-  onViewPublicArticle
+  onViewPublicArticle,
+  defaultStatus = 'all'
 }) => {
   const {
     news,
@@ -39,13 +41,19 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>(
+    defaultStatus === 'featured' ? 'all' : defaultStatus
+  );
+  const [filterFeaturedOnly] = useState<boolean>(defaultStatus === 'featured');
   const [deleteCandidate, setDeleteCandidate] = useState<NewsArticle | null>(
     null
   );
 
   const filteredNews = useMemo(() => {
     return news.filter(item => {
+      if (filterFeaturedOnly && !item.isFeatured) {
+        return false;
+      }
       if (selectedCategory !== 'all' && item.category !== selectedCategory) {
         return false;
       }
@@ -61,7 +69,7 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
       }
       return true;
     });
-  }, [news, searchTerm, selectedCategory, selectedStatus]);
+  }, [news, searchTerm, selectedCategory, selectedStatus, filterFeaturedOnly]);
 
   const confirmDelete = () => {
     if (deleteCandidate) {

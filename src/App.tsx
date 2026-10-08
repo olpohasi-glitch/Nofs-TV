@@ -64,8 +64,16 @@ function MainNewsApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // If Admin is in the Dashboard view
+  // If Admin is in the Dashboard view (Protected by Firebase Auth)
   if (currentView === 'admin-dashboard') {
+    if (!isAdminLoggedIn) {
+      return (
+        <AdminLogin
+          onLoginSuccess={() => setCurrentView('admin-dashboard')}
+          onBackToSite={() => setCurrentView('home')}
+        />
+      );
+    }
     return (
       <AdminDashboardLayout onBackToSite={() => setCurrentView('home')} />
     );

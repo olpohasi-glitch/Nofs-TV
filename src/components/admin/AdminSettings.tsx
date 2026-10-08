@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { Settings, Save, RotateCcw, CheckCircle, Shield } from 'lucide-react';
+import { Settings, Save, RotateCcw, CheckCircle, Shield, Share2, Newspaper, Globe } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 
-export const AdminSettings: React.FC = () => {
+interface AdminSettingsProps {
+  defaultSection?: 'website' | 'social' | 'epaper';
+}
+
+export const AdminSettings: React.FC<AdminSettingsProps> = ({ defaultSection = 'website' }) => {
   const { settings, updateSettings, resetToDefaults } = useNews();
   const [formData, setFormData] = useState({ ...settings });
+  const [activeSection, setActiveSection] = useState<'website' | 'social' | 'epaper'>(defaultSection);
   const [savedNotice, setSavedNotice] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,11 +39,11 @@ export const AdminSettings: React.FC = () => {
           <div className="flex items-center gap-2">
             <Settings className="w-5 h-5 text-red-600" />
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-              ওয়েবসাইট সেটিংস (Website Settings)
+              ওয়েবসাইট ও সিস্টেম সেটিংস
             </h1>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            পোর্টালের ব্র্যান্ডিং, প্রতিষ্ঠাতা তথ্য, ব্যুরো ঠিকানা ও সামাজিক মাধ্যম
+            পোর্টালের ব্র্যান্ডিং, সোশ্যাল চ্যানেল ও ডিজিটাল ই-পেপার কনফিগারেশন
           </p>
         </div>
 
@@ -48,6 +53,48 @@ export const AdminSettings: React.FC = () => {
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>ডিফল্ট ডেটায় রিসেট</span>
+        </button>
+      </div>
+
+      {/* Settings Navigation Tabs */}
+      <div className="flex border-b border-gray-200 gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveSection('website')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            activeSection === 'website'
+              ? 'border-red-600 text-red-700'
+              : 'border-transparent text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          <span>ওয়েবসাইট ও ব্র্যান্ডিং সেটিংস</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('social')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            activeSection === 'social'
+              ? 'border-red-600 text-red-700'
+              : 'border-transparent text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <Share2 className="w-4 h-4" />
+          <span>সোশ্যাল মিডিয়া সেটিংস</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSection('epaper')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+            activeSection === 'epaper'
+              ? 'border-red-600 text-red-700'
+              : 'border-transparent text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <Newspaper className="w-4 h-4" />
+          <span>ই-পেপার সেটিংস</span>
         </button>
       </div>
 

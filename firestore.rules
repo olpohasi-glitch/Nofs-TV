@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'nofstv.bd@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 100;
+    }
+
+    // News articles: public can read published news; admins can read all and write all
+    match /news/{newsId} {
+      allow get: if isValidId(newsId) && (isAdmin() || resource.data.status == 'published');
+      allow list: if isAdmin() || resource.data.status == 'published';
+      allow create, update, delete: if isAdmin() && isValidId(newsId);
+    }
+
+    // Categories: public can read, only admin can write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(categoryId);
+    }
+
+    // Reporters: public can read, only admin can write
+    match /reporters/{reporterId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(reporterId);
+    }
+
+    // Media library: public can read, only admin can write
+    match /media/{mediaId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(mediaId);
+    }
+
+    // Comments: anyone can create a comment; public can read approved comments; admin can manage all
+    match /comments/{commentId} {
+      allow get: if isValidId(commentId) && (isAdmin() || resource.data.status == 'approved');
+      allow list: if isAdmin() || resource.data.status == 'approved';
+      allow create: if isValidId(commentId) && 
+        request.resource.data.authorName is string &&
+        request.resource.data.authorName.size() > 0 &&
+        request.resource.data.authorName.size() <= 100 &&
+        request.resource.data.content is string &&
+        request.resource.data.content.size() > 0 &&
+        request.resource.data.content.size() <= 1000;
+      allow update, delete: if isAdmin() && isValidId(commentId);
+    }
+
+    // Global settings: public can read, only admin can write
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(settingId);
+    }
+
+    // Users collection: user can read/write their own document, admin can read/write all
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Connection test document
+    match /test/{testId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

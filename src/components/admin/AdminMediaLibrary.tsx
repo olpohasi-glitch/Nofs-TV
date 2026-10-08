@@ -6,9 +6,14 @@ import {
   Copy,
   Check,
   Plus,
-  ExternalLink
+  ExternalLink,
+  HardDrive,
+  Loader2,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
+import { uploadMediaFile } from '../../services/firebaseStorage';
 import { MediaItem } from '../../types';
 
 interface AdminMediaLibraryProps {
@@ -22,8 +27,36 @@ export const AdminMediaLibrary: React.FC<AdminMediaLibraryProps> = ({
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
-  const handleUpload = (e: React.FormEvent) => {
+  // Direct File Upload to Firebase Storage
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    setIsUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    try {
+      const result = await uploadMediaFile(file, 'news');
+      await addMedia(result.name, result.url, result.size);
+      setUploadSuccess(`"${result.name}" Firebase Storage-এ সফলভাবে আপলোড হয়েছে!`);
+      setTimeout(() => setUploadSuccess(null), 4000);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setUploadError(error.message || 'Firebase Storage আপলোড ব্যর্থ হয়েছে।');
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      e.target.value = '';
+    }
+  };
+
+  const handleManualAddUrl = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) return;
 
@@ -32,6 +65,8 @@ export const AdminMediaLibrary: React.FC<AdminMediaLibraryProps> = ({
 
     setName('');
     setUrl('');
+    setUploadSuccess('মিডিয়া সফলভাবে তালিকায় যুক্ত করা হয়েছে!');
+    setTimeout(() => setUploadSuccess(null), 3000);
   };
 
   const copyUrl = (id: string, imgUrl: string) => {
@@ -43,7 +78,7 @@ export const AdminMediaLibrary: React.FC<AdminMediaLibraryProps> = ({
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-xs p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-200">
         <div>
           <div className="flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-red-600" />
@@ -52,126 +87,205 @@ export const AdminMediaLibrary: React.FC<AdminMediaLibraryProps> = ({
             </h1>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            সংবাদের ফটো গ্যালারি, ব্যানার ও আপলোড ব্যবস্থাপনা
+            Cloud Firestore এবং Firebase Storage-এ ছবির ব্যবস্থাপনা ও সিঙ্ক
           </p>
+        </div>
+
+        {/* Firebase Storage badge */}
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs">
+          <HardDrive className="w-4 h-4 text-amber-400" />
+          <span>Firebase Storage সক্রিয়</span>
         </div>
       </div>
 
-      {/* Upload Box */}
-      <form
-        onSubmit={handleUpload}
-        className="bg-gray-50 border border-gray-200 p-4 rounded-xl"
-      >
-        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <Upload className="w-4 h-4 text-red-700" />
-          <span>নতুন ছবি আপলোড / যুক্ত করুন (Image URL)</span>
-        </h3>
+      {uploadSuccess && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{uploadSuccess}</span>
+        </div>
+      )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
-              ছবির ফাইল নাম / শিরোনাম
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="যেমন: dhaka-metro-rail.jpg"
-              className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:border-red-600"
-            />
-          </div>
+      {uploadError && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs rounded-lg flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{uploadError}</span>
+        </div>
+      )}
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
-              ছবির ওয়েব লিঙ্ক (Direct Image URL) *
-            </label>
+      {/* Upload Options: Direct File Upload to Firebase Storage OR Image URL */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Firebase Storage Direct File Upload */}
+        <div className="bg-slate-50 border-2 border-dashed border-gray-300 p-5 rounded-xl flex flex-col justify-center items-center text-center">
+          <Upload className="w-8 h-8 text-red-600 mb-2" />
+          <h3 className="text-sm font-bold text-gray-900 mb-1">
+            সরাসরি ফাইল আপলোড (Firebase Storage)
+          </h3>
+          <p className="text-xs text-gray-500 mb-3 max-w-xs">
+            কম্পিউটার বা মোবাইল থেকে JPG, PNG বা WEBP ছবি নির্বাচন করুন
+          </p>
+
+          <label className="relative">
             <input
-              type="text"
-              required
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-              placeholder="https://images.unsplash.com/photo-..."
-              className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:border-red-600"
+              type="file"
+              accept="image/*"
+              disabled={isUploading}
+              onChange={handleFileUpload}
+              className="hidden"
             />
-          </div>
+            <span
+              className={`px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-2 cursor-pointer transition-colors ${
+                isUploading ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Storage-এ আপলোড হচ্ছে...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  <span>ডিভাইস থেকে ছবি আপলোড</span>
+                </>
+              )}
+            </span>
+          </label>
         </div>
 
-        <button
-          type="submit"
-          className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+        {/* Web Image URL addition */}
+        <form
+          onSubmit={handleManualAddUrl}
+          className="bg-gray-50 border border-gray-200 p-5 rounded-xl flex flex-col justify-between"
         >
-          <Plus className="w-4 h-4" />
-          <span>লাইব্রেরিতে যুক্ত করুন</span>
-        </button>
-      </form>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+              <Plus className="w-4 h-4 text-red-700" />
+              <span>ওয়েব ইমেজ লিঙ্ক (Direct URL) যোগ করুন</span>
+            </h3>
 
-      {/* Media Gallery Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {media.map(item => (
-          <div
-            key={item.id}
-            className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-red-400 hover:shadow-md transition-all flex flex-col justify-between"
-          >
-            <div className="relative aspect-[16/10] bg-gray-100 overflow-hidden">
-              <img
-                src={item.url}
-                alt={item.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              {onSelectImageForNews && (
-                <button
-                  onClick={() => onSelectImageForNews(item.url)}
-                  className="absolute inset-0 bg-red-900/70 text-white text-xs font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                >
-                  সংবাদে নির্বাচন করুন
-                </button>
-              )}
-            </div>
-
-            <div className="p-3">
-              <h4 className="text-xs font-bold text-gray-900 truncate" title={item.name}>
-                {item.name}
-              </h4>
-              <div className="flex items-center justify-between text-[11px] text-gray-400 mt-1">
-                <span>{item.size}</span>
-                <span>{item.createdAt}</span>
+            <div className="space-y-2 mb-3">
+              <div>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="ছবির বিবরণ / ক্যাপশন (ঐচ্ছিক)"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:border-red-600"
+                />
               </div>
 
-              {/* Actions */}
-              <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between">
-                <button
-                  onClick={() => copyUrl(item.id, item.url)}
-                  className="text-xs font-semibold text-gray-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
-                  title="URL কপি করুন"
-                >
-                  {copiedId === item.id ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-emerald-600">কপি হয়েছে</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>URL কপি</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (window.confirm('আপনি কি এই ছবিটি মুছে ফেলতে চান?')) {
-                      deleteMedia(item.id);
-                    }
-                  }}
-                  className="p-1 text-red-500 hover:bg-red-50 rounded cursor-pointer"
-                  title="মুছে ফেলুন"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div>
+                <input
+                  type="url"
+                  required
+                  value={url}
+                  onChange={e => setUrl(e.target.value)}
+                  placeholder="https://... (ইমেজ লিঙ্ক)"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:border-red-600"
+                />
               </div>
             </div>
           </div>
-        ))}
+
+          <button
+            type="submit"
+            className="w-fit px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>লাইব্রেরিতে লিঙ্ক যুক্ত করুন</span>
+          </button>
+        </form>
+      </div>
+
+      {/* Media Gallery Grid */}
+      <div>
+        <h3 className="text-sm font-bold text-gray-900 mb-3">
+          সংরক্ষিত মিডিয়া সমূহ ({media.length} টি)
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {media.map(item => (
+            <div
+              key={item.id}
+              className="group relative bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col"
+            >
+              {/* Image Preview */}
+              <div className="relative aspect-video bg-gray-100 overflow-hidden">
+                <img
+                  src={item.url}
+                  alt={item.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={e => {
+                    (e.target as HTMLImageElement).src =
+                      'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=400&q=80';
+                  }}
+                />
+                <div className="absolute top-2 right-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 p-1 rounded-md backdrop-blur-xs">
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-1 text-white hover:text-amber-300"
+                    title="নতুন ট্যাবে দেখুন"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <button
+                    onClick={() => deleteMedia(item.id)}
+                    className="p-1 text-white hover:text-red-400 cursor-pointer"
+                    title="মুছে ফেলুন"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Media Info */}
+              <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+                <div>
+                  <h4
+                    className="text-xs font-bold text-gray-800 truncate"
+                    title={item.name}
+                  >
+                    {item.name}
+                  </h4>
+                  <div className="flex items-center justify-between text-[10px] text-gray-400 mt-1">
+                    <span>{item.size || '1.5 MB'}</span>
+                    <span>{item.createdAt.slice(0, 10)}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
+                  <button
+                    onClick={() => copyUrl(item.id, item.url)}
+                    className="flex-1 py-1.5 px-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                  >
+                    {copiedId === item.id ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span className="text-emerald-700 text-[11px]">কপি হয়েছে</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span className="text-[11px]">URL কপি</span>
+                      </>
+                    )}
+                  </button>
+
+                  {onSelectImageForNews && (
+                    <button
+                      onClick={() => onSelectImageForNews(item.url)}
+                      className="py-1.5 px-2.5 bg-red-700 hover:bg-red-800 text-white text-[11px] font-bold rounded cursor-pointer"
+                    >
+                      ব্যবহার করুন
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

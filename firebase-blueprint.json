@@ -1,0 +1,144 @@
+{
+  "entities": {
+    "News": {
+      "title": "News Article",
+      "description": "Represents an individual news article on NOFS TV",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Headline of the article" },
+        "slug": { "type": "string", "description": "URL-friendly unique slug" },
+        "shortDescription": { "type": "string", "description": "Summary or excerpt" },
+        "content": { "type": "string", "description": "Main body text in Bengali/English" },
+        "category": { "type": "string", "description": "Category name or slug" },
+        "reporter": { "type": "string", "description": "Reporter or author name" },
+        "featuredImage": { "type": "string", "description": "Main cover image URL" },
+        "additionalImages": { "type": "array", "description": "Gallery or additional image URLs" },
+        "tags": { "type": "array", "description": "Keywords and search tags" },
+        "publishDate": { "type": "string", "description": "ISO date string for publication" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last modified timestamp" },
+        "status": { "type": "string", "enum": ["published", "draft", "archived"], "description": "Publication status" },
+        "isBreaking": { "type": "boolean", "description": "Whether article appears in breaking news ticker" },
+        "isFeatured": { "type": "boolean", "description": "Whether article is highlighted in top lead slots" }
+      },
+      "required": ["title", "slug", "content", "category", "status", "createdAt"]
+    },
+    "Category": {
+      "title": "News Category",
+      "description": "News category hierarchy for NOFS TV",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Category display name in Bengali" },
+        "slug": { "type": "string", "description": "Category slug" },
+        "description": { "type": "string", "description": "Description of the category" },
+        "order": { "type": "number", "description": "Display order index" }
+      },
+      "required": ["name", "slug"]
+    },
+    "Reporter": {
+      "title": "Reporter / Journalist",
+      "description": "Editorial journalist or correspondent profile",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name" },
+        "role": { "type": "string", "description": "Designation or title" },
+        "email": { "type": "string", "description": "Contact email" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "bio": { "type": "string", "description": "Short bio" },
+        "avatar": { "type": "string", "description": "Photo URL" },
+        "articleCount": { "type": "number", "description": "Number of articles" }
+      },
+      "required": ["name", "role", "email"]
+    },
+    "MediaItem": {
+      "title": "Media Item",
+      "description": "Uploaded image or asset in Media Library",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Original file name" },
+        "url": { "type": "string", "description": "Direct Firebase Storage or CDN URL" },
+        "size": { "type": "string", "description": "Human readable size" },
+        "type": { "type": "string", "description": "MIME type" },
+        "createdAt": { "type": "string", "description": "Upload timestamp" }
+      },
+      "required": ["name", "url", "createdAt"]
+    },
+    "Comment": {
+      "title": "Article Comment",
+      "description": "Public user comment on a news article",
+      "type": "object",
+      "properties": {
+        "articleId": { "type": "string", "description": "Associated news article ID" },
+        "authorName": { "type": "string", "description": "Commenter display name" },
+        "email": { "type": "string", "description": "Commenter email" },
+        "content": { "type": "string", "description": "Comment text" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" },
+        "status": { "type": "string", "enum": ["approved", "pending", "hidden"], "description": "Moderation status" }
+      },
+      "required": ["articleId", "authorName", "content", "createdAt", "status"]
+    },
+    "SiteSettings": {
+      "title": "Website Settings",
+      "description": "Global configuration and branding for NOFS TV",
+      "type": "object",
+      "properties": {
+        "siteName": { "type": "string", "description": "Portal brand name" },
+        "tagline": { "type": "string", "description": "Slogan" },
+        "founderName": { "type": "string", "description": "Founder and Publisher name" },
+        "founderRole": { "type": "string", "description": "Designation" },
+        "contactEmail": { "type": "string", "description": "Official email" },
+        "contactPhone": { "type": "string", "description": "Contact phone" },
+        "addressSylhet": { "type": "string", "description": "Headquarters address" },
+        "facebookUrl": { "type": "string", "description": "Facebook page URL" },
+        "youtubeUrl": { "type": "string", "description": "YouTube channel URL" },
+        "tiktokUrl": { "type": "string", "description": "TikTok profile URL" },
+        "aboutText": { "type": "string", "description": "About NOFS TV description" },
+        "logoUrl": { "type": "string", "description": "Official logo image URL" }
+      },
+      "required": ["siteName", "contactEmail", "founderName"]
+    },
+    "User": {
+      "title": "Admin User Profile",
+      "description": "Authorized admin and editor account",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "User email" },
+        "displayName": { "type": "string", "description": "Full name" },
+        "role": { "type": "string", "enum": ["admin", "editor", "reporter"], "description": "User access role" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/news/{newsId}": {
+      "schema": "News",
+      "description": "Collection of all news articles"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Collection of news categories"
+    },
+    "/reporters/{reporterId}": {
+      "schema": "Reporter",
+      "description": "Journalists and reporter directory"
+    },
+    "/media/{mediaId}": {
+      "schema": "MediaItem",
+      "description": "Uploaded media assets"
+    },
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "User comments on articles"
+    },
+    "/settings/global": {
+      "schema": "SiteSettings",
+      "description": "Singleton document containing global site settings"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Registered admin and editorial users"
+    }
+  }
+}

@@ -17,10 +17,16 @@ import {
   Menu,
   X,
   Shield,
-  Bell
+  Bell,
+  Share2,
+  Newspaper,
+  FileClock,
+  CheckCircle2,
+  Database,
+  Sparkles
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
-import { AdminTab, NewsArticle, NOFS_TV_LOGO_URL, NOFS_TV_LOGO_REMOTE_URL } from '../../types';
+import { AdminTab, NewsArticle, NOFS_TV_LOGO_URL } from '../../types';
 import { AdminOverview } from './AdminOverview';
 import { AdminAddNews } from './AdminAddNews';
 import { AdminAllNews } from './AdminAllNews';
@@ -46,12 +52,16 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
     logoutAdmin,
     news,
     comments,
-    breakingNews
+    breakingNews,
+    isFirestoreConnected,
+    seedFirestore
   } = useNews();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [seedNotice, setSeedNotice] = useState<string | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const handleEditArticle = (article: NewsArticle) => {
     setEditingArticle(article);
@@ -63,10 +73,27 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
     setActiveTab('add-news');
   };
 
-  const handleLogout = () => {
-    logoutAdmin();
+  const handleLogout = async () => {
+    await logoutAdmin();
     onBackToSite();
   };
+
+  const handleSeedDatabase = async () => {
+    setIsSeeding(true);
+    try {
+      const res = await seedFirestore();
+      setSeedNotice(res.message);
+      setTimeout(() => setSeedNotice(null), 4000);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setSeedNotice(error.message);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  const draftNewsCount = news.filter(n => n.status === 'draft').length;
+  const publishedNewsCount = news.filter(n => n.status === 'published').length;
 
   const menuItems = [
     {
@@ -88,16 +115,16 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
       badge: toBengaliNumber(news.length)
     },
     {
-      id: 'edit-news',
-      label: 'সংবাদ সম্পাদনা (Edit News)',
-      icon: Edit,
-      badge: editingArticle ? '১' : null
+      id: 'draft-news',
+      label: 'খসড়া সংবাদ (Draft News)',
+      icon: FileClock,
+      badge: draftNewsCount > 0 ? toBengaliNumber(draftNewsCount) : null
     },
     {
-      id: 'categories',
-      label: 'ক্যাটাগরি (Categories)',
-      icon: FolderTree,
-      badge: null
+      id: 'published-news',
+      label: 'প্রকাশিত সংবাদ (Published News)',
+      icon: CheckCircle2,
+      badge: toBengaliNumber(publishedNewsCount)
     },
     {
       id: 'breaking-news',
@@ -112,9 +139,21 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
       badge: toBengaliNumber(news.filter(n => n.isFeatured).length)
     },
     {
+      id: 'categories',
+      label: 'ক্যাটাগরি (Categories)',
+      icon: FolderTree,
+      badge: null
+    },
+    {
       id: 'reporters',
       label: 'প্রতিবেদক (Reporters)',
       icon: Users,
+      badge: null
+    },
+    {
+      id: 'media',
+      label: 'মিডিয়া লাইব্রেরি (Media Library)',
+      icon: ImageIcon,
       badge: null
     },
     {
@@ -124,20 +163,26 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
       badge: toBengaliNumber(comments.length)
     },
     {
-      id: 'media',
-      label: 'মিডিয়া লাইব্রেরি (Media Library)',
-      icon: ImageIcon,
-      badge: null
-    },
-    {
       id: 'settings',
-      label: 'ওয়েবসাইট সেটিংস (Settings)',
+      label: 'ওয়েবসাইট সেটিংস (Website Settings)',
       icon: Settings,
       badge: null
     },
     {
+      id: 'social-settings',
+      label: 'সোশ্যাল মিডিয়া (Social Media)',
+      icon: Share2,
+      badge: null
+    },
+    {
+      id: 'epaper-settings',
+      label: 'ই-পেপার সেটিংস (E-paper Settings)',
+      icon: Newspaper,
+      badge: null
+    },
+    {
       id: 'profile',
-      label: 'অ্যাডমিন প্রোফাইল (Admin Profile)',
+      label: 'প্রশাসক প্রোফাইল (Profile)',
       icon: User,
       badge: null
     }
@@ -163,17 +208,11 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
 
             {/* Official Logo */}
             <div className="flex items-center gap-2">
-              <div className="bg-white px-1.5 py-0.5 rounded shadow-2xs inline-block">
-                <img
-                  src={settings.logoUrl || NOFS_TV_LOGO_URL}
-                  alt="NOFS TV"
-                  referrerPolicy="no-referrer"
-                  onError={e => {
-                    (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_REMOTE_URL;
-                  }}
-                  className="h-9 sm:h-10 w-auto object-contain"
-                />
-              </div>
+              <img
+                src={settings.logoUrl || NOFS_TV_LOGO_URL}
+                alt="NOFS TV"
+                className="h-8 sm:h-9 w-auto object-contain bg-white/10 px-1 py-0.5 rounded"
+              />
               <span className="text-xs text-slate-400 hidden sm:inline border-l border-slate-700 pl-2">
                 অ্যাডমিন ও নিউজরুম কন্ট্রোল
               </span>
@@ -182,6 +221,35 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
 
           {/* Right Header items */}
           <div className="flex items-center space-x-3">
+            {/* Live Firebase Firestore Connection Indicator */}
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 text-[11px] border border-slate-700">
+              <Database className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-slate-300">Firestore:</span>
+              <span
+                className={`font-semibold flex items-center gap-1 ${
+                  isFirestoreConnected ? 'text-emerald-400' : 'text-amber-400'
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isFirestoreConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                  }`}
+                ></span>
+                {isFirestoreConnected ? 'সংযুক্ত' : 'কানেক্টিং'}
+              </span>
+            </div>
+
+            {/* Quick Seed Initial Data to Firestore button */}
+            <button
+              onClick={handleSeedDatabase}
+              disabled={isSeeding}
+              className="hidden lg:flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white text-[11px] font-medium border border-slate-700 transition-colors cursor-pointer"
+              title="Firestore ডেটাবেসে প্রাথমিক ডেটা সিড করুন"
+            >
+              <Sparkles className="w-3 h-3 text-amber-400" />
+              <span>{isSeeding ? 'সংরক্ষণ হচ্ছে...' : 'ইনিশিয়ালাইজ ডেটা'}</span>
+            </button>
+
             {/* View live public portal */}
             <button
               onClick={onBackToSite}
@@ -201,8 +269,8 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
                 <span className="font-bold text-slate-100 block">
                   {settings.founderName}
                 </span>
-                <span className="text-[10px] text-amber-400 block">
-                  {settings.founderRole}
+                <span className="text-[10px] text-amber-400 block font-mono">
+                  {adminUser.email}
                 </span>
               </div>
             </div>
@@ -217,6 +285,14 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Seed notice banner */}
+        {seedNotice && (
+          <div className="bg-amber-900/60 border-t border-amber-700 px-4 py-1.5 text-xs text-amber-200 text-center flex items-center justify-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>{seedNotice}</span>
+          </div>
+        )}
       </header>
 
       {/* Main Admin Workspace */}
@@ -331,6 +407,23 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
             <AdminAllNews
               onAddNew={handleAddNew}
               onEditArticle={handleEditArticle}
+              defaultStatus="all"
+            />
+          )}
+
+          {activeTab === 'draft-news' && (
+            <AdminAllNews
+              onAddNew={handleAddNew}
+              onEditArticle={handleEditArticle}
+              defaultStatus="draft"
+            />
+          )}
+
+          {activeTab === 'published-news' && (
+            <AdminAllNews
+              onAddNew={handleAddNew}
+              onEditArticle={handleEditArticle}
+              defaultStatus="published"
             />
           )}
 
@@ -338,6 +431,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
             <AdminAllNews
               onAddNew={handleAddNew}
               onEditArticle={handleEditArticle}
+              defaultStatus="featured"
             />
           )}
 
@@ -351,7 +445,11 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
 
           {activeTab === 'media' && <AdminMediaLibrary />}
 
-          {activeTab === 'settings' && <AdminSettings />}
+          {activeTab === 'settings' && <AdminSettings defaultSection="website" />}
+
+          {activeTab === 'social-settings' && <AdminSettings defaultSection="social" />}
+
+          {activeTab === 'epaper-settings' && <AdminSettings defaultSection="epaper" />}
 
           {activeTab === 'profile' && <AdminProfile />}
         </main>

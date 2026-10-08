@@ -60,7 +60,7 @@ export const AdminAddNews: React.FC<AdminAddNewsProps> = ({
   const [isFeatured, setIsFeatured] = useState(
     editingArticle?.isFeatured || false
   );
-  const [status, setStatus] = useState<'published' | 'draft'>(
+  const [status, setStatus] = useState<'published' | 'draft' | 'archived'>(
     editingArticle?.status || 'published'
   );
 
