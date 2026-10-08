@@ -65,8 +65,14 @@ export function subscribeToNews(
           reporterId: data.reporterId || '',
           reporterName: data.reporterName || data.reporter || 'NOFS TV নিউজরুম',
           reporterRole: data.reporterRole || 'প্রতিবেদক',
-          featuredImage: data.featuredImage || data.image || '',
-          image: data.image || data.featuredImage || '',
+          featuredImage:
+            docSnap.id === 'news-1' && (!data.featuredImage || data.featuredImage.includes('photo-1540575467063'))
+              ? 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
+              : data.featuredImage || data.image || '',
+          image:
+            docSnap.id === 'news-1' && (!data.image || data.image.includes('photo-1540575467063'))
+              ? 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80'
+              : data.image || data.featuredImage || '',
           additionalImages: data.additionalImages || [],
           imageCaption: data.imageCaption || '',
           publishDate: data.publishDate || '',
