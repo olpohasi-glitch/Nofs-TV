@@ -110,7 +110,24 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [settings, setSettings] = useState<SiteSettings>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
+    if (!saved) return INITIAL_SETTINGS;
+    try {
+      const parsed = JSON.parse(saved);
+      return {
+        ...INITIAL_SETTINGS,
+        ...parsed,
+        siteName: 'NOFS TV',
+        tagline: 'সত্যের সন্ধানে, মানুষের পাশে',
+        contactEmail: 'nofstv.bd@gmail.com',
+        addressSylhet: 'প্রধান কার্যালয়: সিলেট, বাংলাদেশ',
+        addressDhaka: '',
+        contactPhone: '',
+        founderName: 'M. Ajmol Hussain Jakir',
+        founderRole: 'প্রতিষ্ঠাতা ও প্রকাশক (Founder & Publisher)'
+      };
+    } catch {
+      return INITIAL_SETTINGS;
+    }
   });
 
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
@@ -120,8 +137,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const adminUser = {
     name: settings.founderName || 'M. Ajmol Hussain Jakir',
-    role: settings.founderRole || 'Founder & Administrator',
-    email: settings.contactEmail || 'admin@nofstv.com'
+    role: settings.founderRole || 'প্রতিষ্ঠাতা ও প্রকাশক',
+    email: settings.contactEmail || 'nofstv.bd@gmail.com'
   };
 
   // Sync to localStorage

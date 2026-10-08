@@ -14,7 +14,7 @@ import {
 import { useNews } from '../context/NewsContext';
 import { getCurrentBengaliDate } from '../utils/bengali';
 import { useSylhetWeather } from '../utils/useSylhetWeather';
-import { PublicView, NOFS_TV_LOGO_URL } from '../types';
+import { PublicView, NOFS_TV_LOGO_URL, NOFS_TV_LOGO_REMOTE_URL } from '../types';
 
 interface HeaderProps {
   currentView: PublicView;
@@ -158,22 +158,18 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand Logo: Official NOFS TV Logo Image */}
         <div
           onClick={onNavigateHome}
-          className="cursor-pointer flex flex-col items-center lg:items-start select-none group py-1"
+          className="cursor-pointer flex items-center select-none group py-1"
+          title="NOFS TV - বাংলা অনলাইন নিউজ পোর্টাল"
         >
           <img
             src={settings.logoUrl || NOFS_TV_LOGO_URL}
             alt="NOFS TV"
-            className="h-12 sm:h-14 md:h-16 w-auto max-w-[200px] sm:max-w-[250px] md:max-w-[290px] object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+            referrerPolicy="no-referrer"
+            onError={e => {
+              (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_REMOTE_URL;
+            }}
+            className="h-20 sm:h-24 md:h-28 w-auto max-w-[220px] sm:max-w-[280px] md:max-w-[320px] object-contain drop-shadow-xs transition-transform duration-200 group-hover:scale-[1.02]"
           />
-          {/* Visible Sub-Identity & Tagline without duplicating the text NOFS TV */}
-          <div className="flex flex-col items-center lg:items-start mt-1">
-            <span className="text-[11px] sm:text-xs font-bold text-gray-800 tracking-wide">
-              বাংলা অনলাইন নিউজ পোর্টাল
-            </span>
-            <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium tracking-wide group-hover:text-red-700 transition-colors">
-              “{settings.tagline}”
-            </p>
-          </div>
         </div>
 
         {/* Header Right Actions */}
@@ -259,7 +255,11 @@ export const Header: React.FC<HeaderProps> = ({
             <img
               src={settings.logoUrl || NOFS_TV_LOGO_URL}
               alt="NOFS TV"
-              className="h-10 w-auto object-contain bg-white/5 p-1 rounded"
+              referrerPolicy="no-referrer"
+              onError={e => {
+                (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_REMOTE_URL;
+              }}
+              className="h-14 w-auto object-contain bg-white/5 p-1 rounded"
             />
             <span className="text-xs text-slate-300 font-medium">বাংলা অনলাইন নিউজ পোর্টাল</span>
           </div>

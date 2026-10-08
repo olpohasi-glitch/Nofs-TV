@@ -144,27 +144,13 @@ export const AdminSettings: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                প্রধান কার্যালয় (সিলেট)
+                প্রধান কার্যালয় (হেড অফিস)
               </label>
               <input
                 type="text"
                 value={formData.addressSylhet}
                 onChange={e =>
                   setFormData({ ...formData, addressSylhet: e.target.value })
-                }
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:border-red-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                ঢাকা ব্যুরো কার্যালয়
-              </label>
-              <input
-                type="text"
-                value={formData.addressDhaka}
-                onChange={e =>
-                  setFormData({ ...formData, addressDhaka: e.target.value })
                 }
                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-xs focus:outline-none focus:border-red-600"
               />

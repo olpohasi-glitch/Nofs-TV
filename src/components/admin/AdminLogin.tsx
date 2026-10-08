@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Lock, Mail, ArrowLeft, KeyRound, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
-import { NOFS_TV_LOGO_URL } from '../../types';
+import { NOFS_TV_LOGO_URL, NOFS_TV_LOGO_REMOTE_URL } from '../../types';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -53,11 +53,17 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 relative z-10">
         {/* Brand Header */}
         <div className="text-center mb-8 flex flex-col items-center">
-          <img
-            src={settings.logoUrl || NOFS_TV_LOGO_URL}
-            alt="NOFS TV"
-            className="h-14 sm:h-16 w-auto max-w-[220px] object-contain mb-3 bg-white/5 p-1 rounded"
-          />
+          <div className="bg-white p-2.5 rounded-2xl shadow-md mb-4 border border-slate-700">
+            <img
+              src={settings.logoUrl || NOFS_TV_LOGO_URL}
+              alt="NOFS TV"
+              referrerPolicy="no-referrer"
+              onError={e => {
+                (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_REMOTE_URL;
+              }}
+              className="h-20 sm:h-24 w-auto max-w-[240px] object-contain"
+            />
+          </div>
           <h2 className="text-xl font-bold text-white tracking-tight">
             নিউজ কন্ট্রোল ও অ্যাডমিন প্যানেল
           </h2>

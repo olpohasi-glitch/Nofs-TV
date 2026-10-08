@@ -527,7 +527,7 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
                 সকল সংবাদ শতভাগ তথ্য যাচাই, নিরপেক্ষতা এবং পেশাদারিত্ব বজায় রেখে পরিবেশন করা হয়।
               </p>
               <div className="pt-2 border-t border-slate-700 text-[11px] text-slate-400">
-                প্রধান বার্তা কক্ষ • সিলেট ও ঢাকা
+                প্রধান বার্তা কক্ষ • সিলেট, বাংলাদেশ
               </div>
             </div>
           </div>

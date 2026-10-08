@@ -20,7 +20,7 @@ import {
   Bell
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
-import { AdminTab, NewsArticle, NOFS_TV_LOGO_URL } from '../../types';
+import { AdminTab, NewsArticle, NOFS_TV_LOGO_URL, NOFS_TV_LOGO_REMOTE_URL } from '../../types';
 import { AdminOverview } from './AdminOverview';
 import { AdminAddNews } from './AdminAddNews';
 import { AdminAllNews } from './AdminAllNews';
@@ -163,11 +163,17 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
 
             {/* Official Logo */}
             <div className="flex items-center gap-2">
-              <img
-                src={settings.logoUrl || NOFS_TV_LOGO_URL}
-                alt="NOFS TV"
-                className="h-8 sm:h-9 w-auto object-contain bg-white/10 px-1 py-0.5 rounded"
-              />
+              <div className="bg-white px-1.5 py-0.5 rounded shadow-2xs inline-block">
+                <img
+                  src={settings.logoUrl || NOFS_TV_LOGO_URL}
+                  alt="NOFS TV"
+                  referrerPolicy="no-referrer"
+                  onError={e => {
+                    (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_REMOTE_URL;
+                  }}
+                  className="h-9 sm:h-10 w-auto object-contain"
+                />
+              </div>
               <span className="text-xs text-slate-400 hidden sm:inline border-l border-slate-700 pl-2">
                 অ্যাডমিন ও নিউজরুম কন্ট্রোল
               </span>

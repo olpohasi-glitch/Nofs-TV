@@ -148,29 +148,22 @@ export const Footer: React.FC<FooterProps> = ({
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-slate-200 block">ঢাকা ব্যুরো:</strong>
-                  <span>{settings.addressDhaka}</span>
+                  <strong className="text-slate-200 block">প্রধান কার্যালয়:</strong>
+                  <span>সিলেট, বাংলাদেশ</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <Mail className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-slate-200 block">সিলেট ব্যুরো:</strong>
-                  <span>{settings.addressSylhet}</span>
+                  <strong className="text-slate-200 block">Official Email:</strong>
+                  <a
+                    href="mailto:nofstv.bd@gmail.com"
+                    className="text-slate-300 hover:text-white transition-colors"
+                  >
+                    nofstv.bd@gmail.com
+                  </a>
                 </div>
-              </div>
-
-              {settings.contactPhone && (
-                <div className="flex items-center gap-2.5 pt-1">
-                  <Phone className="w-4 h-4 text-red-500 shrink-0" />
-                  <span>{settings.contactPhone}</span>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-red-500 shrink-0" />
-                <span>{settings.contactEmail}</span>
               </div>
 
               <div className="pt-2">
@@ -223,7 +216,7 @@ export const Footer: React.FC<FooterProps> = ({
           </p>
 
           <p className="text-slate-400 text-center sm:text-right">
-            প্রতিষ্ঠাতা ও প্রকাশক: <span className="text-slate-200 font-semibold">{settings.founderName}</span> | সম্পাদকীয় নীতিমালা অনুযায়ী প্রকাশিত।
+            প্রতিষ্ঠাতা ও প্রকাশক: <span className="text-slate-200 font-semibold">{settings.founderName}</span> | প্রধান কার্যালয়: সিলেট, বাংলাদেশ
           </p>
 
           <button
