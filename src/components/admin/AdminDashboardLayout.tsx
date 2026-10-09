@@ -41,10 +41,12 @@ import { toBengaliNumber } from '../../utils/bengali';
 
 interface AdminDashboardLayoutProps {
   onBackToSite: () => void;
+  onViewPublicArticle?: (id: string) => void;
 }
 
 export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
-  onBackToSite
+  onBackToSite,
+  onViewPublicArticle
 }) => {
   const {
     adminUser,
@@ -407,6 +409,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
             <AdminAllNews
               onAddNew={handleAddNew}
               onEditArticle={handleEditArticle}
+              onViewPublicArticle={onViewPublicArticle}
               defaultStatus="all"
             />
           )}
@@ -415,6 +418,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
             <AdminAllNews
               onAddNew={handleAddNew}
               onEditArticle={handleEditArticle}
+              onViewPublicArticle={onViewPublicArticle}
               defaultStatus="draft"
             />
           )}
@@ -423,6 +427,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
             <AdminAllNews
               onAddNew={handleAddNew}
               onEditArticle={handleEditArticle}
+              onViewPublicArticle={onViewPublicArticle}
               defaultStatus="published"
             />
           )}
@@ -431,6 +436,7 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
             <AdminAllNews
               onAddNew={handleAddNew}
               onEditArticle={handleEditArticle}
+              onViewPublicArticle={onViewPublicArticle}
               defaultStatus="featured"
             />
           )}

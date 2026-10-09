@@ -23,11 +23,13 @@ export const CategoryArchivePage: React.FC<CategoryArchivePageProps> = ({
 
   const categoryObj = categories.find(c => c.name === categoryName);
 
+  const publishedNews = news.filter(n => n.status === 'published');
+
   const filteredNews = isLatest
-    ? [...news].sort(
+    ? [...publishedNews].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
-    : news.filter(n => n.category === categoryName);
+    : publishedNews.filter(n => n.category === categoryName);
 
   const leadStory = filteredNews[0];
   const remainingStories = filteredNews.slice(1);

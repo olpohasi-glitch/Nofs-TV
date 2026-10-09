@@ -231,13 +231,18 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-bold rounded-full ${
                         item.status === 'published'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : 'bg-amber-50 text-amber-800 border border-amber-200'
                       }`}
                     >
-                      {item.status === 'published' ? 'লাইভ' : 'খসড়া'}
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          item.status === 'published' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+                        }`}
+                      ></span>
+                      <span>{item.status === 'published' ? 'প্রকাশিত (Published)' : 'খসড়া (Draft)'}</span>
                     </span>
                   </td>
                   <td className="py-3 px-4 text-xs font-mono">

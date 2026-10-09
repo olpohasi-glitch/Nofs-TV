@@ -11,7 +11,14 @@ import {
   XCircle,
   Plus,
   AlertTriangle,
-  ExternalLink
+  ExternalLink,
+  Globe,
+  EyeOff,
+  FileText,
+  Clock,
+  Sparkles,
+  Layers,
+  Check
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
 import { NewsArticle } from '../../types';
@@ -34,30 +41,93 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
     news,
     categories,
     deleteNews,
-    togglePublishStatus,
+    publishNews,
+    unpublishNews,
     toggleBreakingStatus,
     toggleFeaturedStatus
   } = useNews();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>(
-    defaultStatus === 'featured' ? 'all' : defaultStatus
-  );
-  const [filterFeaturedOnly] = useState<boolean>(defaultStatus === 'featured');
-  const [deleteCandidate, setDeleteCandidate] = useState<NewsArticle | null>(
-    null
-  );
+  const [selectedStatus, setSelectedStatus] = useState<string>(defaultStatus);
+  const [deleteCandidate, setDeleteCandidate] = useState<NewsArticle | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error' | 'info';
+    message: string;
+  } | null>(null);
+
+  // Live Counts for Status Metrics
+  const countTotal = news.length;
+  const countPublished = news.filter(n => n.status === 'published').length;
+  const countDraft = news.filter(n => n.status === 'draft').length;
+  const countBreaking = news.filter(n => n.isBreaking).length;
+  const countFeatured = news.filter(n => n.isFeatured).length;
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 4500);
+  };
+
+  const handlePublish = async (article: NewsArticle) => {
+    try {
+      setProcessingId(article.id);
+      await publishNews(article.id);
+      showToast(`"${article.title}" সফলভাবে প্রকাশিত (Published) হয়েছে! এটি এখন পাবলিক পোর্টালে লাইভ।`, 'success');
+    } catch (err: unknown) {
+      const error = err as Error;
+      showToast(`প্রকাশনা ব্যর্থ: ${error.message}`, 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleUnpublish = async (article: NewsArticle) => {
+    try {
+      setProcessingId(article.id);
+      await unpublishNews(article.id);
+      showToast(`"${article.title}" অপ্রকাশিত / খসড়া (Draft) হিসেবে নেওয়া হয়েছে। পাবলিক ওয়েবসাইট থেকে সরিয়ে নেওয়া হয়েছে।`, 'info');
+    } catch (err: unknown) {
+      const error = err as Error;
+      showToast(`অপ্রকাশিত করতে ব্যর্থ: ${error.message}`, 'error');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (deleteCandidate) {
+      try {
+        setProcessingId(deleteCandidate.id);
+        await deleteNews(deleteCandidate.id);
+        showToast(`"${deleteCandidate.title}" সংবাদটি ডেটাবেস থেকে স্থায়ীভাবে মুছে ফেলা হয়েছে।`, 'success');
+        setDeleteCandidate(null);
+      } catch (err: unknown) {
+        const error = err as Error;
+        showToast(`সংবাদ মুছতে সমস্যা: ${error.message}`, 'error');
+      } finally {
+        setProcessingId(null);
+      }
+    }
+  };
 
   const filteredNews = useMemo(() => {
     return news.filter(item => {
-      if (filterFeaturedOnly && !item.isFeatured) {
+      if (selectedStatus === 'published' && item.status !== 'published') {
+        return false;
+      }
+      if (selectedStatus === 'draft' && item.status !== 'draft') {
+        return false;
+      }
+      if (selectedStatus === 'featured' && !item.isFeatured) {
+        return false;
+      }
+      if (selectedStatus === 'breaking' && !item.isBreaking) {
         return false;
       }
       if (selectedCategory !== 'all' && item.category !== selectedCategory) {
-        return false;
-      }
-      if (selectedStatus !== 'all' && item.status !== selectedStatus) {
         return false;
       }
       if (
@@ -69,25 +139,25 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
       }
       return true;
     });
-  }, [news, searchTerm, selectedCategory, selectedStatus, filterFeaturedOnly]);
-
-  const confirmDelete = () => {
-    if (deleteCandidate) {
-      deleteNews(deleteCandidate.id);
-      setDeleteCandidate(null);
-    }
-  };
+  }, [news, searchTerm, selectedCategory, selectedStatus]);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-xs p-6 space-y-6">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-xs p-5 sm:p-6 space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            সকল সংবাদ ব্যবস্থাপনা (All News Management)
-          </h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            মোট সংবাদ সংখ্যা: <strong className="text-red-700">{toBengaliNumber(news.length)}</strong> টি
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              সকল সংবাদ ব্যবস্থাপনা (All News Management)
+            </h1>
+            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+              Firestore পারসিস্টেন্ট
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            মোট সংবাদ: <strong className="text-gray-900">{toBengaliNumber(countTotal)}</strong> টি • 
+            প্রকাশিত: <strong className="text-emerald-700">{toBengaliNumber(countPublished)}</strong> টি • 
+            খসড়া: <strong className="text-amber-700">{toBengaliNumber(countDraft)}</strong> টি
           </p>
         </div>
 
@@ -100,10 +170,118 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
         </button>
       </div>
 
+      {/* Notification Toast Alert */}
+      {notification && (
+        <div
+          className={`p-3.5 rounded-lg text-xs font-semibold flex items-center justify-between gap-3 border transition-all ${
+            notification.type === 'success'
+              ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+              : notification.type === 'error'
+              ? 'bg-red-50 text-red-900 border-red-200'
+              : 'bg-amber-50 text-amber-900 border-amber-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {notification.type === 'success' ? (
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : notification.type === 'error' ? (
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+            ) : (
+              <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+            )}
+            <span>{notification.message}</span>
+          </div>
+          <button
+            onClick={() => setNotification(null)}
+            className="text-gray-400 hover:text-gray-700 text-xs cursor-pointer font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Status Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <button
+          onClick={() => setSelectedStatus('all')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+            selectedStatus === 'all'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>সকল সংবাদ</span>
+          <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+            {toBengaliNumber(countTotal)}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setSelectedStatus('published')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+            selectedStatus === 'published'
+              ? 'bg-emerald-700 text-white shadow-xs'
+              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>প্রকাশিত সংবাদ (Published)</span>
+          <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-black/10">
+            {toBengaliNumber(countPublished)}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setSelectedStatus('draft')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+            selectedStatus === 'draft'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>খসড়া সংবাদ (Draft)</span>
+          <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-black/10">
+            {toBengaliNumber(countDraft)}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setSelectedStatus('breaking')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+            selectedStatus === 'breaking'
+              ? 'bg-red-700 text-white shadow-xs'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          <Flame className="w-3.5 h-3.5 text-red-600" />
+          <span>ব্রেকিং</span>
+          <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-black/10">
+            {toBengaliNumber(countBreaking)}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setSelectedStatus('featured')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 ${
+            selectedStatus === 'featured'
+              ? 'bg-amber-500 text-white shadow-xs'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          <Star className="w-3.5 h-3.5 text-amber-500" />
+          <span>ফিচার্ড</span>
+          <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-black/10">
+            {toBengaliNumber(countFeatured)}
+          </span>
+        </button>
+      </div>
+
       {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Search Input */}
-        <div className="relative">
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
+        {/* Search Input (6 cols) */}
+        <div className="relative sm:col-span-6">
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -114,8 +292,8 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
           />
         </div>
 
-        {/* Category Filter */}
-        <div>
+        {/* Category Filter (3 cols) */}
+        <div className="sm:col-span-3">
           <select
             value={selectedCategory}
             onChange={e => setSelectedCategory(e.target.value)}
@@ -130,146 +308,201 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
           </select>
         </div>
 
-        {/* Status Filter */}
-        <div>
+        {/* Status Dropdown Filter (3 cols) */}
+        <div className="sm:col-span-3">
           <select
             value={selectedStatus}
             onChange={e => setSelectedStatus(e.target.value)}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-red-600"
           >
             <option value="all">সকল অবস্থা (All Status)</option>
-            <option value="published">লাইভ / প্রকাশিত (Published)</option>
-            <option value="draft">খসড়া (Draft)</option>
+            <option value="published">শুধুমাত্র প্রকাশিত (Published)</option>
+            <option value="draft">শুধুমাত্র খসড়া (Draft)</option>
+            <option value="breaking">ব্রেকিং নিউজ</option>
+            <option value="featured">ফিচার্ড নিউজ</option>
           </select>
         </div>
       </div>
 
       {/* News Table */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      <div className="overflow-x-auto border border-gray-200 rounded-xl">
         <table className="w-full text-left text-xs sm:text-sm text-gray-700">
           <thead className="bg-gray-50 text-xs text-gray-600 uppercase border-b border-gray-200">
             <tr>
-              <th className="py-3 px-4">সংবাদ শিরোনাম</th>
-              <th className="py-3 px-3">ক্যাটাগরি</th>
-              <th className="py-3 px-3">প্রতিবেদক</th>
-              <th className="py-3 px-3 text-center">ব্রেকিং</th>
-              <th className="py-3 px-3 text-center">ফিচার্ড</th>
-              <th className="py-3 px-3 text-center">স্ট্যাটাস</th>
-              <th className="py-3 px-3 text-center">ভিউ</th>
-              <th className="py-3 px-4 text-right">পদক্ষেপ</th>
+              <th className="py-3 px-4 font-bold">সংবাদ শিরোনাম</th>
+              <th className="py-3 px-3 font-bold">ক্যাটাগরি</th>
+              <th className="py-3 px-3 font-bold">প্রতিবেদক</th>
+              <th className="py-3 px-3 text-center font-bold">অবস্থা (Status)</th>
+              <th className="py-3 px-2 text-center font-bold">ব্রেকিং</th>
+              <th className="py-3 px-2 text-center font-bold">ফিচার্ড</th>
+              <th className="py-3 px-3 text-center font-bold">ভিউ</th>
+              <th className="py-3 px-4 text-right font-bold">পদক্ষেপ (Actions)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filteredNews.map(item => (
-              <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
-                {/* Title & Thumbnail */}
-                <td className="py-3 px-4 max-w-xs">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={item.image}
-                      alt=""
-                      className="w-12 h-9 rounded object-cover shrink-0 border border-gray-200"
-                    />
-                    <div className="min-w-0">
-                      <span className="font-bold text-gray-900 line-clamp-1 block text-sm">
-                        {item.title}
-                      </span>
-                      <span className="text-[11px] text-gray-400 block mt-0.5">
-                        {item.publishDate}
-                      </span>
+            {filteredNews.map(item => {
+              const isPublished = item.status === 'published';
+              const isBusy = processingId === item.id;
+
+              return (
+                <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                  {/* Title & Thumbnail */}
+                  <td className="py-3 px-4 max-w-xs sm:max-w-sm">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={item.image}
+                        alt=""
+                        className="w-12 h-9 rounded object-cover shrink-0 border border-gray-200"
+                      />
+                      <div className="min-w-0">
+                        <span className="font-bold text-gray-900 line-clamp-1 block text-sm">
+                          {item.title}
+                        </span>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-400">
+                          <span>{item.publishDate}</span>
+                          <span>•</span>
+                          <span className="font-mono text-[10px] text-gray-400">
+                            ID: {item.id}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                {/* Category */}
-                <td className="py-3 px-3">
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-800 text-xs font-semibold rounded">
-                    {item.category}
-                  </span>
-                </td>
+                  {/* Category */}
+                  <td className="py-3 px-3">
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-800 text-xs font-semibold rounded">
+                      {item.category}
+                    </span>
+                  </td>
 
-                {/* Reporter */}
-                <td className="py-3 px-3 text-xs text-gray-600">
-                  {item.reporterName}
-                </td>
+                  {/* Reporter */}
+                  <td className="py-3 px-3 text-xs text-gray-600">
+                    {item.reporterName}
+                  </td>
 
-                {/* Breaking Toggle */}
-                <td className="py-3 px-3 text-center">
-                  <button
-                    onClick={() => toggleBreakingStatus(item.id)}
-                    className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                      item.isBreaking
-                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                    }`}
-                    title={item.isBreaking ? 'ব্রেকিং নিউজ সক্রিয়' : 'ব্রেকিং নিউজ হিসেবে সেট করুন'}
-                  >
-                    <Flame className="w-4 h-4" />
-                  </button>
-                </td>
+                  {/* Status Badge (Requirement 6: Clear Status labels) */}
+                  <td className="py-3 px-3 text-center">
+                    {isPublished ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                        <span>প্রকাশিত</span>
+                        <span className="text-[10px] text-emerald-600 font-normal hidden sm:inline">(Published)</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        <span>খসড়া</span>
+                        <span className="text-[10px] text-amber-600 font-normal hidden sm:inline">(Draft)</span>
+                      </span>
+                    )}
+                  </td>
 
-                {/* Featured Toggle */}
-                <td className="py-3 px-3 text-center">
-                  <button
-                    onClick={() => toggleFeaturedStatus(item.id)}
-                    className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                      item.isFeatured
-                        ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
-                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                    }`}
-                    title={item.isFeatured ? 'ফিচার্ড সক্রিয়' : 'ফিচার্ড হিসেবে সেট করুন'}
-                  >
-                    <Star className="w-4 h-4" />
-                  </button>
-                </td>
-
-                {/* Status Toggle */}
-                <td className="py-3 px-3 text-center">
-                  <button
-                    onClick={() => togglePublishStatus(item.id)}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-full transition-colors cursor-pointer ${
-                      item.status === 'published'
-                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                        : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                    }`}
-                  >
-                    {item.status === 'published' ? 'লাইভ' : 'খসড়া'}
-                  </button>
-                </td>
-
-                {/* Views */}
-                <td className="py-3 px-3 text-center text-xs font-mono text-gray-600">
-                  {toBengaliNumber(item.views || 0)}
-                </td>
-
-                {/* Actions: Edit, Delete */}
-                <td className="py-3 px-4 text-right">
-                  <div className="flex items-center justify-end space-x-1.5">
+                  {/* Breaking Toggle */}
+                  <td className="py-3 px-2 text-center">
                     <button
-                      onClick={() => onEditArticle(item)}
-                      className="p-1.5 rounded text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-                      title="সম্পাদনা করুন"
+                      onClick={() => toggleBreakingStatus(item.id)}
+                      className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                        item.isBreaking
+                          ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                      }`}
+                      title={item.isBreaking ? 'ব্রেকিং নিউজ সক্রিয়' : 'ব্রেকিং নিউজ হিসেবে সেট করুন'}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Flame className="w-4 h-4" />
                     </button>
+                  </td>
+
+                  {/* Featured Toggle */}
+                  <td className="py-3 px-2 text-center">
                     <button
-                      onClick={() => setDeleteCandidate(item)}
-                      className="p-1.5 rounded text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                      title="মুছে ফেলুন"
+                      onClick={() => toggleFeaturedStatus(item.id)}
+                      className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                        item.isFeatured
+                          ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                          : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                      }`}
+                      title={item.isFeatured ? 'ফিচার্ড সক্রিয়' : 'ফিচার্ড হিসেবে সেট করুন'}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Star className="w-4 h-4" />
                     </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+
+                  {/* Views */}
+                  <td className="py-3 px-3 text-center text-xs font-mono text-gray-600">
+                    {toBengaliNumber(item.views || 0)}
+                  </td>
+
+                  {/* Actions (Requirement 7: Publish, Unpublish, Edit, and Delete actions) */}
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {/* Publish / Unpublish Action Button */}
+                      {isPublished ? (
+                        <button
+                          onClick={() => handleUnpublish(item)}
+                          disabled={isBusy}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                          title="সংবাদটি অপ্রকাশিত / খসড়া করুন (Unpublish to Draft)"
+                        >
+                          <EyeOff className="w-3.5 h-3.5 text-amber-700" />
+                          <span className="hidden md:inline">আনপাবলিশ</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handlePublish(item)}
+                          disabled={isBusy}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                          title="সংবাদটি অবিলম্বে ওয়েবসাইটে প্রকাশ করুন (Publish Live)"
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                          <span className="hidden md:inline">পাবলিশ</span>
+                        </button>
+                      )}
+
+                      {/* Public Preview Button (if published) */}
+                      {isPublished && onViewPublicArticle && (
+                        <button
+                          onClick={() => onViewPublicArticle(item.id)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                          title="পাবলিক পেজে সরাসরি দেখুন"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => onEditArticle(item)}
+                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        title="সংবাদ সম্পাদনা করুন (Edit)"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => setDeleteCandidate(item)}
+                        className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                        title="সংবাদটি স্থায়ীভাবে মুছে ফেলুন (Delete)"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       {filteredNews.length === 0 && (
         <div className="py-12 text-center text-gray-500 text-sm">
-          কোনো সংবাদ পাওয়া যায়নি।
+          {selectedStatus === 'draft'
+            ? 'বর্তমানে কোনো খসড়া সংবাদ নেই।'
+            : selectedStatus === 'published'
+            ? 'কোনো প্রকাশিত সংবাদ পাওয়া যায়নি।'
+            : 'কোনো সংবাদ পাওয়া যায়নি।'}
         </div>
       )}
 
@@ -284,9 +517,9 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
               </h3>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
-              আপনি কি নিশ্চিত যে নিচের সংবাদটি স্থায়ীভাবে মুছে ফেলতে চান?
+              আপনি কি নিশ্চিত যে নিচের সংবাদটি Firebase ডেটাবেস থেকে স্থায়ীভাবে মুছে ফেলতে চান? এটি আর পুনরুদ্ধার করা যাবে না।
             </p>
-            <div className="p-3 bg-red-50 rounded border border-red-200 text-xs font-semibold text-red-950 mb-5">
+            <div className="p-3 bg-red-50 rounded-lg border border-red-200 text-xs font-semibold text-red-950 mb-5">
               "{deleteCandidate.title}"
             </div>
             <div className="flex items-center justify-end space-x-3">
@@ -298,9 +531,10 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
+                disabled={processingId === deleteCandidate.id}
+                className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
               >
-                হ্যাঁ, মুছে ফেলুন
+                {processingId === deleteCandidate.id ? 'মুছে ফেলা হচ্ছে...' : 'হ্যাঁ, মুছে ফেলুন'}
               </button>
             </div>
           </div>

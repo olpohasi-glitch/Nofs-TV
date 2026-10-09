@@ -26,6 +26,11 @@ export const SearchSystem: React.FC<SearchSystemProps> = ({
     const q = searchTerm.trim().toLowerCase();
 
     return news.filter(item => {
+      // Security: Only published news must appear in public search results
+      if (item.status !== 'published') {
+        return false;
+      }
+
       // Category filter
       if (selectedCat !== 'all' && item.category !== selectedCat) {
         return false;

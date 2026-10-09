@@ -75,7 +75,14 @@ function MainNewsApp() {
       );
     }
     return (
-      <AdminDashboardLayout onBackToSite={() => setCurrentView('home')} />
+      <AdminDashboardLayout
+        onBackToSite={() => setCurrentView('home')}
+        onViewPublicArticle={id => {
+          setSelectedArticleId(id);
+          setCurrentView('article');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     );
   }
 

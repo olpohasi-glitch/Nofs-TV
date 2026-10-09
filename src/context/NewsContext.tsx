@@ -75,6 +75,8 @@ interface NewsContextType {
   toggleBreakingStatus: (id: string) => Promise<void>;
   toggleFeaturedStatus: (id: string) => Promise<void>;
   togglePublishStatus: (id: string) => Promise<void>;
+  publishNews: (id: string) => Promise<void>;
+  unpublishNews: (id: string) => Promise<void>;
   incrementViews: (id: string) => void;
   // Breaking news ticker
   addBreakingNews: (text: string, articleId?: string) => void;
@@ -280,7 +282,23 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const target = news.find(n => n.id === id);
     if (!target) return;
     const nextStatus = target.status === 'published' ? 'draft' : 'published';
-    const updated: NewsArticle = { ...target, status: nextStatus };
+    const updated: NewsArticle = { ...target, status: nextStatus, updatedAt: new Date().toISOString() };
+    setNews(prev => prev.map(item => (item.id === id ? updated : item)));
+    await saveNewsToFirestore(updated);
+  };
+
+  const publishNews = async (id: string) => {
+    const target = news.find(n => n.id === id);
+    if (!target) return;
+    const updated: NewsArticle = { ...target, status: 'published', updatedAt: new Date().toISOString() };
+    setNews(prev => prev.map(item => (item.id === id ? updated : item)));
+    await saveNewsToFirestore(updated);
+  };
+
+  const unpublishNews = async (id: string) => {
+    const target = news.find(n => n.id === id);
+    if (!target) return;
+    const updated: NewsArticle = { ...target, status: 'draft', updatedAt: new Date().toISOString() };
     setNews(prev => prev.map(item => (item.id === id ? updated : item)));
     await saveNewsToFirestore(updated);
   };
@@ -483,6 +501,8 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toggleBreakingStatus,
         toggleFeaturedStatus,
         togglePublishStatus,
+        publishNews,
+        unpublishNews,
         incrementViews,
         addBreakingNews,
         updateBreakingNews,

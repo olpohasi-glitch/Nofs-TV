@@ -74,11 +74,11 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
   }
 
   const relatedArticles = news
-    .filter(a => a.category === article.category && a.id !== article.id)
+    .filter(a => a.category === article.category && a.id !== article.id && a.status === 'published')
     .slice(0, 3);
 
   const latestSidebarArticles = news
-    .filter(a => a.id !== article.id)
+    .filter(a => a.id !== article.id && a.status === 'published')
     .slice(0, 5);
 
   const articleComments = comments.filter(
@@ -146,6 +146,18 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Article Content Column (8 cols) */}
           <div className="lg:col-span-8 bg-white p-5 sm:p-8 rounded-xl border border-gray-200 shadow-xs">
+            {article.status === 'draft' && (
+              <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-950 text-xs font-semibold flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  <span>অ্যাডমিন প্রিভিউ: এটি একটি খসড়া (Draft) সংবাদ। সাধারণ দর্শকরা এটি দেখতে পাবেন না।</span>
+                </span>
+                <span className="text-[10px] bg-amber-200/80 px-2 py-0.5 rounded font-bold uppercase">
+                  Draft
+                </span>
+              </div>
+            )}
+
             {/* Category Pill */}
             <div className="flex items-center gap-2 mb-3">
               <span className="px-3 py-1 bg-red-700 text-white text-xs font-bold rounded-sm">
