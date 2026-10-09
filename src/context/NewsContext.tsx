@@ -24,7 +24,8 @@ import {
   adminSignOut,
   subscribeToAuth,
   initializeAdminAccount,
-  OFFICIAL_ADMIN_EMAIL
+  OFFICIAL_ADMIN_EMAIL,
+  isAuthorizedAdminEmail
 } from '../services/firebaseAuth';
 import {
   subscribeToNews,
@@ -131,7 +132,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const isAdminLoggedIn = Boolean(
-    firebaseUser && firebaseUser.email && firebaseUser.email.toLowerCase() === OFFICIAL_ADMIN_EMAIL.toLowerCase()
+    firebaseUser && firebaseUser.email && isAuthorizedAdminEmail(firebaseUser.email)
   );
 
   // 2. Test Firestore connection and subscribe to real-time general collections

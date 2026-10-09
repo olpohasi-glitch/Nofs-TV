@@ -6,13 +6,13 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Official NOFS TV Administrator authorization
+    // Official NOFS TV Administrator authorization:
+    // Strictly verifies email against the official authorized administrator account
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'nofstv.bd@gmail.com' ||
-        (request.auth.token.keys().hasAny(['role']) && request.auth.token.role == 'admin') ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin')
       );
     }
     
@@ -93,11 +93,17 @@ service cloud.firestore {
       allow write: if isAdmin() && isValidId(settingId);
     }
 
+    // ADMINS & USERS COLLECTION:
+    // - Only authorized administrator can manage admin accounts
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+
     // USERS COLLECTION:
-    // - Authenticated users can read/write their own record; admin can manage all.
+    // - Only authorized administrator can manage users. No public user self-registration into roles.
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
     }
 
     // CONNECTION TEST DOCUMENT:

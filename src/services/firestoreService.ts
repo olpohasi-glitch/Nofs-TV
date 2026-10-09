@@ -14,7 +14,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { OFFICIAL_ADMIN_EMAIL } from './firebaseAuth';
+import { OFFICIAL_ADMIN_EMAIL, isAuthorizedAdminEmail } from './firebaseAuth';
 import {
   NewsArticle,
   Category,
@@ -41,10 +41,11 @@ const SETTINGS_DOC_ID = 'global';
 
 /**
  * Validates that the current user is an authorized NOFS TV administrator.
+ * Throws an explicit authorization error if unauthenticated or not in the allowlist.
  */
 function assertAdminAuthorized() {
   const user = auth.currentUser;
-  if (!user || !user.email || user.email.toLowerCase() !== OFFICIAL_ADMIN_EMAIL.toLowerCase()) {
+  if (!user || !user.email || !isAuthorizedAdminEmail(user.email)) {
     throw new Error('অননুমোদিত এক্সেস: শুধুমাত্র NOFS TV এর অনুমোদিত অ্যাডমিন (nofstv.bd@gmail.com) এই কাজটি করতে পারবেন।');
   }
 }

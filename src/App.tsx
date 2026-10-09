@@ -144,6 +144,11 @@ function MainNewsApp() {
           setCurrentView('home');
           history.pushState(null, '', window.location.pathname);
         }}
+        onLogout={() => {
+          setCurrentView('home');
+          history.pushState(null, '', window.location.pathname);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
         onViewPublicArticle={id => {
           setSelectedArticleId(id);
           setCurrentView('article');

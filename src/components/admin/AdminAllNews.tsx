@@ -23,6 +23,7 @@ import {
 import { useNews } from '../../context/NewsContext';
 import { NewsArticle } from '../../types';
 import { toBengaliNumber } from '../../utils/bengali';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface AdminAllNewsProps {
   onAddNew: () => void;
@@ -516,40 +517,14 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteCandidate && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center gap-3 text-red-600 mb-3">
-              <AlertTriangle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-gray-900">
-                সংবাদ মুছে ফেলার নিশ্চিতকরণ
-              </h3>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed mb-4">
-              আপনি কি নিশ্চিত যে নিচের সংবাদটি Firebase ডেটাবেস থেকে স্থায়ীভাবে মুছে ফেলতে চান? এটি আর পুনরুদ্ধার করা যাবে না।
-            </p>
-            <div className="p-3 bg-red-50 rounded-lg border border-red-200 text-xs font-semibold text-red-950 mb-5">
-              "{deleteCandidate.title}"
-            </div>
-            <div className="flex items-center justify-end space-x-3">
-              <button
-                onClick={() => setDeleteCandidate(null)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
-              >
-                বাতিল করুন
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={processingId === deleteCandidate.id}
-                className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {processingId === deleteCandidate.id ? 'মুছে ফেলা হচ্ছে...' : 'হ্যাঁ, মুছে ফেলুন'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Custom Delete Confirmation Modal Component */}
+      <DeleteConfirmModal
+        isOpen={Boolean(deleteCandidate)}
+        article={deleteCandidate}
+        isDeleting={processingId === deleteCandidate?.id}
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteCandidate(null)}
+      />
     </div>
   );
 };

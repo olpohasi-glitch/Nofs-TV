@@ -11,12 +11,42 @@ import { auth } from '../lib/firebase';
 export const OFFICIAL_ADMIN_EMAIL = 'nofstv.bd@gmail.com';
 
 /**
- * Signs in the administrator with Firebase Authentication.
+ * Server-side & Backend authorized administrator email allowlist.
+ * Only accounts explicitly approved by the system owner may access administrative capabilities.
  */
-export async function adminSignIn(password: string): Promise<FirebaseUser> {
-  const email = OFFICIAL_ADMIN_EMAIL;
+export const AUTHORIZED_ADMIN_EMAILS: readonly string[] = Object.freeze([
+  'nofstv.bd@gmail.com'
+]);
+
+/**
+ * Checks if a given email is in the authorized administrators allowlist.
+ */
+export function isAuthorizedAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return AUTHORIZED_ADMIN_EMAILS.some(allowed => allowed.toLowerCase() === normalized);
+}
+
+/**
+ * Signs in the administrator with Firebase Authentication and verifies explicit authorization.
+ */
+export async function adminSignIn(password: string, email: string = OFFICIAL_ADMIN_EMAIL): Promise<FirebaseUser> {
+  const targetEmail = (email || OFFICIAL_ADMIN_EMAIL).trim().toLowerCase();
+
+  // Strict check: reject non-allowlisted emails immediately
+  if (!isAuthorizedAdminEmail(targetEmail)) {
+    throw new Error('অননুমোদিত অ্যাকাউন্ট: এই ইমেইলটি NOFS TV অ্যাডমিন প্যানেলের অনুমোদিত তালিকায় নেই।');
+  }
+
   try {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, targetEmail, password);
+    
+    // Strict post-authentication check
+    if (!isAuthorizedAdminEmail(cred.user.email)) {
+      await fbSignOut(auth);
+      throw new Error('অননুমোদিত এক্সেস: আপনার অ্যাকাউন্টটি NOFS TV অ্যাডমিন হিসেবে অনুমোদিত নয়।');
+    }
+
     return cred.user;
   } catch (err: unknown) {
     const error = err as { code?: string; message?: string };
@@ -41,6 +71,7 @@ export async function adminSignIn(password: string): Promise<FirebaseUser> {
 
 /**
  * Initializes the official admin account in Firebase Authentication if not created yet.
+ * STRICT: Only allows initializing the approved official admin email.
  */
 export async function initializeAdminAccount(password: string): Promise<FirebaseUser> {
   const email = OFFICIAL_ADMIN_EMAIL;

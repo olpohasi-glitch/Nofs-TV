@@ -41,11 +41,13 @@ import { toBengaliNumber } from '../../utils/bengali';
 
 interface AdminDashboardLayoutProps {
   onBackToSite: () => void;
+  onLogout?: () => void;
   onViewPublicArticle?: (id: string) => void;
 }
 
 export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
   onBackToSite,
+  onLogout,
   onViewPublicArticle
 }) => {
   const {
@@ -77,7 +79,11 @@ export const AdminDashboardLayout: React.FC<AdminDashboardLayoutProps> = ({
 
   const handleLogout = async () => {
     await logoutAdmin();
-    onBackToSite();
+    if (onLogout) {
+      onLogout();
+    } else {
+      onBackToSite();
+    }
   };
 
   const handleSeedDatabase = async () => {
