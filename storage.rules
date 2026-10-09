@@ -1,0 +1,30 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'nofstv.bd@gmail.com' ||
+        (request.auth.token.keys().hasAny(['role']) && request.auth.token.role == 'admin')
+      );
+    }
+
+    // Public users can only read images (belonging to published news & website assets)
+    // Only authorized administrator (nofstv.bd@gmail.com) can upload, update, or delete images
+    match /uploads/{allPaths=**} {
+      allow read: if true;
+      
+      // Upload/write restricted to authenticated NOFS TV admin
+      allow write: if isAdmin() && 
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+        
+      // Delete restricted to authenticated NOFS TV admin
+      allow delete: if isAdmin();
+    }
+  }
+}

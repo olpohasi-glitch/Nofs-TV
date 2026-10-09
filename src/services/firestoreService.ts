@@ -7,12 +7,14 @@ import {
   getDocs,
   getDoc,
   query,
+  where,
   orderBy,
   limit,
   serverTimestamp,
   writeBatch
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
+import { OFFICIAL_ADMIN_EMAIL } from './firebaseAuth';
 import {
   NewsArticle,
   Category,
@@ -37,17 +39,34 @@ const COMMENTS_COLLECTION = 'comments';
 const SETTINGS_COLLECTION = 'settings';
 const SETTINGS_DOC_ID = 'global';
 
+/**
+ * Validates that the current user is an authorized NOFS TV administrator.
+ */
+function assertAdminAuthorized() {
+  const user = auth.currentUser;
+  if (!user || !user.email || user.email.toLowerCase() !== OFFICIAL_ADMIN_EMAIL.toLowerCase()) {
+    throw new Error('অননুমোদিত এক্সেস: শুধুমাত্র NOFS TV এর অনুমোদিত অ্যাডমিন (nofstv.bd@gmail.com) এই কাজটি করতে পারবেন।');
+  }
+}
+
 // ==========================================
 // NEWS ARTICLES
 // ==========================================
 
 export function subscribeToNews(
   onUpdate: (articles: NewsArticle[]) => void,
-  onError?: (err: Error) => void
+  onError?: (err: Error) => void,
+  isAdmin: boolean = false
 ) {
   const newsRef = collection(db, NEWS_COLLECTION);
+  // Security Enforcement: Unauthenticated / public users ONLY query published news.
+  // Drafts are never queried by the public and are blocked by Firestore rules.
+  const newsQuery = isAdmin
+    ? newsRef
+    : query(newsRef, where('status', '==', 'published'));
+
   return onSnapshot(
-    newsRef,
+    newsQuery,
     snapshot => {
       const articles: NewsArticle[] = [];
       snapshot.forEach(docSnap => {
@@ -98,6 +117,7 @@ export function subscribeToNews(
 }
 
 export async function saveNewsToFirestore(article: NewsArticle): Promise<void> {
+  assertAdminAuthorized();
   const newsDocRef = doc(db, NEWS_COLLECTION, article.id);
   const now = new Date().toISOString();
   await setDoc(
@@ -133,6 +153,7 @@ export async function saveNewsToFirestore(article: NewsArticle): Promise<void> {
 }
 
 export async function deleteNewsFromFirestore(id: string): Promise<void> {
+  assertAdminAuthorized();
   await deleteDoc(doc(db, NEWS_COLLECTION, id));
 }
 
@@ -169,6 +190,7 @@ export function subscribeToCategories(
 }
 
 export async function saveCategoryToFirestore(category: Category): Promise<void> {
+  assertAdminAuthorized();
   await setDoc(
     doc(db, CATEGORIES_COLLECTION, category.id),
     {
@@ -182,6 +204,7 @@ export async function saveCategoryToFirestore(category: Category): Promise<void>
 }
 
 export async function deleteCategoryFromFirestore(id: string): Promise<void> {
+  assertAdminAuthorized();
   await deleteDoc(doc(db, CATEGORIES_COLLECTION, id));
 }
 
@@ -220,6 +243,7 @@ export function subscribeToReporters(
 }
 
 export async function saveReporterToFirestore(reporter: Reporter): Promise<void> {
+  assertAdminAuthorized();
   await setDoc(
     doc(db, REPORTERS_COLLECTION, reporter.id),
     {
@@ -236,6 +260,7 @@ export async function saveReporterToFirestore(reporter: Reporter): Promise<void>
 }
 
 export async function deleteReporterFromFirestore(id: string): Promise<void> {
+  assertAdminAuthorized();
   await deleteDoc(doc(db, REPORTERS_COLLECTION, id));
 }
 
@@ -272,10 +297,12 @@ export function subscribeToMedia(
 }
 
 export async function saveMediaItemToFirestore(item: MediaItem): Promise<void> {
+  assertAdminAuthorized();
   await setDoc(doc(db, MEDIA_COLLECTION, item.id), item, { merge: true });
 }
 
 export async function deleteMediaItemFromFirestore(id: string): Promise<void> {
+  assertAdminAuthorized();
   await deleteDoc(doc(db, MEDIA_COLLECTION, id));
 }
 
@@ -329,10 +356,12 @@ export async function updateCommentStatusInFirestore(
   id: string,
   status: 'approved' | 'pending' | 'hidden'
 ): Promise<void> {
+  assertAdminAuthorized();
   await setDoc(doc(db, COMMENTS_COLLECTION, id), { status }, { merge: true });
 }
 
 export async function deleteCommentFromFirestore(id: string): Promise<void> {
+  assertAdminAuthorized();
   await deleteDoc(doc(db, COMMENTS_COLLECTION, id));
 }
 
@@ -369,6 +398,7 @@ export function subscribeToSettings(
 }
 
 export async function saveSettingsToFirestore(settings: SiteSettings): Promise<void> {
+  assertAdminAuthorized();
   const settingsDocRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
   await setDoc(settingsDocRef, settings, { merge: true });
 }
@@ -384,6 +414,7 @@ export async function seedInitialFirestoreData(): Promise<{
   seeded: boolean;
   message: string;
 }> {
+  assertAdminAuthorized();
   try {
     const newsSnapshot = await getDocs(collection(db, NEWS_COLLECTION));
     if (!newsSnapshot.empty) {

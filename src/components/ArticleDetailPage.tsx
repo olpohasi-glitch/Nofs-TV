@@ -32,7 +32,7 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
   onSelectCategory,
   onNavigateHome
 }) => {
-  const { news, comments, addComment, incrementViews } = useNews();
+  const { news, comments, addComment, incrementViews, isAdminLoggedIn } = useNews();
   const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
   const [copied, setCopied] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -43,7 +43,8 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
   const [commentText, setCommentText] = useState('');
   const [commentSuccess, setCommentSuccess] = useState(false);
 
-  const article = news.find(a => a.id === articleId) || news[0];
+  const rawArticle = news.find(a => a.id === articleId);
+  const article = (rawArticle && (rawArticle.status === 'published' || isAdminLoggedIn)) ? rawArticle : null;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -54,11 +55,17 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
 
   if (!article) {
     return (
-      <div className="py-20 text-center">
-        <p className="text-gray-500">সংবাদটি খুঁজে পাওয়া যায়নি।</p>
+      <div className="py-24 text-center max-w-lg mx-auto px-4">
+        <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Share2 className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">সংবাদটি খুঁজে পাওয়া যায়নি</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          অনুরোধকৃত সংবাদটি এখনো প্রকাশিত হয়নি, অপ্রকাশিত খসড়া বা সরিয়ে নেওয়া হয়েছে।
+        </p>
         <button
           onClick={onNavigateHome}
-          className="mt-4 px-4 py-2 bg-red-700 text-white rounded cursor-pointer"
+          className="px-5 py-2.5 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-lg cursor-pointer transition-colors shadow-sm"
         >
           হোমপেজে ফিরে যান
         </button>

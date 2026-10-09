@@ -1,5 +1,16 @@
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { storage } from '../lib/firebase';
+import { storage, auth } from '../lib/firebase';
+import { OFFICIAL_ADMIN_EMAIL } from './firebaseAuth';
+
+/**
+ * Validates that current user is an authorized NOFS TV administrator.
+ */
+function assertAdminAuthorized() {
+  const user = auth.currentUser;
+  if (!user || !user.email || user.email.toLowerCase() !== OFFICIAL_ADMIN_EMAIL.toLowerCase()) {
+    throw new Error('অননুমোদিত এক্সেস: শুধুমাত্র NOFS TV এর অনুমোদিত অ্যাডমিন (nofstv.bd@gmail.com) ইমেজ আপলোড বা ডিলিট করতে পারবেন।');
+  }
+}
 
 /**
  * Uploads a file (e.g. image for news article or reporter) to Firebase Storage.
@@ -8,6 +19,7 @@ export async function uploadMediaFile(
   file: File,
   folder: 'news' | 'reporters' | 'general' = 'news'
 ): Promise<{ url: string; name: string; size: string; type: string }> {
+  assertAdminAuthorized();
   try {
     const timestamp = Date.now();
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -38,6 +50,7 @@ export async function uploadMediaFile(
  * Deletes a file from Firebase Storage given its full download URL or path.
  */
 export async function deleteMediaFile(pathOrUrl: string): Promise<void> {
+  assertAdminAuthorized();
   try {
     const storageRef = ref(storage, pathOrUrl);
     await deleteObject(storageRef);

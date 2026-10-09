@@ -14,7 +14,7 @@ import {
 import { useNews } from '../context/NewsContext';
 import { getCurrentBengaliDate } from '../utils/bengali';
 import { useSylhetWeather } from '../utils/useSylhetWeather';
-import { PublicView, NOFS_TV_LOGO_URL, NOFS_TV_LOGO_REMOTE_URL } from '../types';
+import { PublicView, NOFS_TV_LOGO_URL } from '../types';
 
 interface HeaderProps {
   currentView: PublicView;
@@ -166,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
             alt="NOFS TV"
             referrerPolicy="no-referrer"
             onError={e => {
-              (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_REMOTE_URL;
+              (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_URL;
             }}
             className="h-20 sm:h-24 md:h-28 w-auto max-w-[220px] sm:max-w-[280px] md:max-w-[320px] object-contain drop-shadow-xs transition-transform duration-200 group-hover:scale-[1.02]"
           />
@@ -257,7 +257,7 @@ export const Header: React.FC<HeaderProps> = ({
               alt="NOFS TV"
               referrerPolicy="no-referrer"
               onError={e => {
-                (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_REMOTE_URL;
+                (e.currentTarget as HTMLImageElement).src = NOFS_TV_LOGO_URL;
               }}
               className="h-14 w-auto object-contain bg-white/5 p-1 rounded"
             />

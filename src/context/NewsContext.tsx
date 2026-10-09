@@ -128,16 +128,14 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  // 2. Test Firestore connection and subscribe to real-time collections
+  const isAdminLoggedIn = Boolean(
+    firebaseUser && firebaseUser.email && firebaseUser.email.toLowerCase() === OFFICIAL_ADMIN_EMAIL.toLowerCase()
+  );
+
+  // 2. Test Firestore connection and subscribe to real-time general collections
   useEffect(() => {
     testFirestoreConnection().then(res => {
       setIsFirestoreConnected(res.connected);
-    });
-
-    const unsubNews = subscribeToNews(firestoreArticles => {
-      if (firestoreArticles.length > 0) {
-        setNews(firestoreArticles);
-      }
     });
 
     const unsubCategories = subscribeToCategories(firestoreCategories => {
@@ -169,7 +167,6 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
-      unsubNews();
       unsubCategories();
       unsubReporters();
       unsubComments();
@@ -178,9 +175,24 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const isAdminLoggedIn = Boolean(
-    firebaseUser && firebaseUser.email === OFFICIAL_ADMIN_EMAIL
-  );
+  // 3. News subscription with backend query security:
+  // - Public visitors: Query strictly where('status', '==', 'published') (Drafts NEVER exposed)
+  // - Authorized Administrator: Query all news (drafts + published)
+  useEffect(() => {
+    const unsubNews = subscribeToNews(
+      firestoreArticles => {
+        if (firestoreArticles.length > 0) {
+          setNews(firestoreArticles);
+        }
+      },
+      err => {
+        console.warn('News subscription notice:', err);
+      },
+      isAdminLoggedIn
+    );
+
+    return () => unsubNews();
+  }, [isAdminLoggedIn]);
 
   const adminUser = {
     name: settings.founderName || 'M. Ajmol Hussain Jakir',

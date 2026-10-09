@@ -6,9 +6,11 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    // Official NOFS TV Administrator authorization
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'nofstv.bd@gmail.com' ||
+        (request.auth.token.keys().hasAny(['role']) && request.auth.token.role == 'admin') ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
@@ -18,32 +20,57 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 100;
     }
 
-    // News articles: public can read published news; admins can read all and write all
+    // NEWS ARTICLES:
+    // - Public visitors have READ-ONLY access to published news.
+    // - Draft news is NEVER publicly readable.
+    // - Only authenticated and authorized administrator can create, edit, delete, or change status/flags.
     match /news/{newsId} {
-      allow get: if isValidId(newsId) && (isAdmin() || resource.data.status == 'published');
+      allow get: if isValidId(newsId) && (
+        isAdmin() || resource.data.status == 'published'
+      );
       allow list: if isAdmin() || resource.data.status == 'published';
-      allow create, update, delete: if isAdmin() && isValidId(newsId);
+      
+      allow create: if isAdmin() && isValidId(newsId) &&
+        request.resource.data.keys().hasAll(['title', 'content', 'category', 'status']) &&
+        request.resource.data.title is string &&
+        request.resource.data.title.size() > 0 &&
+        request.resource.data.content is string &&
+        request.resource.data.status in ['published', 'draft', 'archived'];
+        
+      allow update: if isAdmin() && isValidId(newsId) &&
+        request.resource.data.status in ['published', 'draft', 'archived'];
+        
+      allow delete: if isAdmin() && isValidId(newsId);
     }
 
-    // Categories: public can read, only admin can write
+    // CATEGORIES:
+    // - Public visitors have READ-ONLY access.
+    // - Only authorized administrator can create, edit, or delete categories.
     match /categories/{categoryId} {
       allow read: if true;
       allow write: if isAdmin() && isValidId(categoryId);
     }
 
-    // Reporters: public can read, only admin can write
+    // REPORTERS:
+    // - Public visitors have READ-ONLY access.
+    // - Only authorized administrator can add, edit, or delete reporters.
     match /reporters/{reporterId} {
       allow read: if true;
       allow write: if isAdmin() && isValidId(reporterId);
     }
 
-    // Media library: public can read, only admin can write
+    // MEDIA LIBRARY:
+    // - Public visitors have READ-ONLY access to media metadata.
+    // - Only authorized administrator can save, modify, or delete media items.
     match /media/{mediaId} {
       allow read: if true;
       allow write: if isAdmin() && isValidId(mediaId);
     }
 
-    // Comments: anyone can create a comment; public can read approved comments; admin can manage all
+    // COMMENTS:
+    // - Public visitors can submit comments with pending status.
+    // - Public visitors can only read approved comments.
+    // - Only authorized administrator can approve, hide, edit, or delete comments.
     match /comments/{commentId} {
       allow get: if isValidId(commentId) && (isAdmin() || resource.data.status == 'approved');
       allow list: if isAdmin() || resource.data.status == 'approved';
@@ -53,23 +80,27 @@ service cloud.firestore {
         request.resource.data.authorName.size() <= 100 &&
         request.resource.data.content is string &&
         request.resource.data.content.size() > 0 &&
-        request.resource.data.content.size() <= 1000;
+        request.resource.data.content.size() <= 1000 &&
+        request.resource.data.status == 'pending';
       allow update, delete: if isAdmin() && isValidId(commentId);
     }
 
-    // Global settings: public can read, only admin can write
+    // WEBSITE SETTINGS:
+    // - Public visitors have READ-ONLY access.
+    // - Only authorized administrator can modify site settings.
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isAdmin() && isValidId(settingId);
     }
 
-    // Users collection: user can read/write their own document, admin can read/write all
+    // USERS COLLECTION:
+    // - Authenticated users can read/write their own record; admin can manage all.
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
     }
 
-    // Connection test document
+    // CONNECTION TEST DOCUMENT:
     match /test/{testId} {
       allow read: if true;
       allow write: if isAdmin();

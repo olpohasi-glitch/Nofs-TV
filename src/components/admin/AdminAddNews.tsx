@@ -70,7 +70,7 @@ export const AdminAddNews: React.FC<AdminAddNewsProps> = ({
   const selectedReporter =
     reporters.find(r => r.id === reporterId) || reporters[0];
 
-  const handleSubmit = (finalStatus: 'published' | 'draft') => {
+  const handleSubmit = async (finalStatus: 'published' | 'draft') => {
     if (!title.trim() || !content.trim()) {
       alert('অনুগ্রহ করে সংবাদের শিরোনাম এবং বিস্তারিত খবর পূরণ করুন।');
       return;
@@ -90,7 +90,7 @@ export const AdminAddNews: React.FC<AdminAddNewsProps> = ({
       category,
       reporterId: selectedReporter?.id || 'rep-1',
       reporterName: selectedReporter?.name || 'M. Ajmol Hussain Jakir',
-      reporterRole: selectedReporter?.role || 'Founder & Administrator',
+      reporterRole: selectedReporter?.role || 'প্রতিষ্ঠাতা ও প্রকাশক',
       image: image.trim(),
       imageCaption: imageCaption.trim(),
       publishDate,
@@ -101,17 +101,26 @@ export const AdminAddNews: React.FC<AdminAddNewsProps> = ({
       status: finalStatus
     };
 
-    if (editingArticle) {
-      updateNews(editingArticle.id, articleData);
-      setNotification('সংবাদটি সফলভাবে আপডেট করা হয়েছে!');
-    } else {
-      addNews(articleData);
-      setNotification('নতুন সংবাদ সফলভাবে তৈরি ও সংরক্ষণ করা হয়েছে!');
-    }
+    try {
+      if (editingArticle) {
+        await updateNews(editingArticle.id, articleData);
+        setNotification('সংবাদটি সফলভাবে আপডেট করা হয়েছে!');
+      } else {
+        await addNews(articleData);
+        setNotification(
+          finalStatus === 'draft'
+            ? 'খসড়া সংবাদটি সুরক্ষিতভাবে সংরক্ষণ করা হয়েছে!'
+            : 'নতুন সংবাদটি সফলভাবে প্রকাশিত হয়েছে!'
+        );
+      }
 
-    setTimeout(() => {
-      onSuccess();
-    }, 1000);
+      setTimeout(() => {
+        onSuccess();
+      }, 1000);
+    } catch (err: unknown) {
+      const error = err as Error;
+      alert(`অপারেশন ব্যর্থ: ${error.message}`);
+    }
   };
 
   return (
