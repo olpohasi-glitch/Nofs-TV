@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import {
   NewsArticle,
@@ -180,11 +180,30 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 3. News subscription with backend query security:
   // - Public visitors: Query strictly where('status', '==', 'published') (Drafts NEVER exposed)
   // - Authorized Administrator: Query all news (drafts + published)
+  const hasLoadedNewsOnce = useRef(false);
+
   useEffect(() => {
+    let autoSeedingStarted = false;
+
     const unsubNews = subscribeToNews(
-      firestoreArticles => {
+      async firestoreArticles => {
         if (firestoreArticles.length > 0) {
+          hasLoadedNewsOnce.current = true;
           setNews(firestoreArticles);
+        } else if (isAdminLoggedIn && !hasLoadedNewsOnce.current && !autoSeedingStarted) {
+          // If Firestore news collection is empty upon authorized admin login, auto-seed initial database documents
+          autoSeedingStarted = true;
+          try {
+            const res = await seedInitialFirestoreData();
+            if (res.seeded) {
+              hasLoadedNewsOnce.current = true;
+            }
+          } catch (err) {
+            console.warn('Auto-seed note:', err);
+          }
+        } else if (hasLoadedNewsOnce.current) {
+          // All articles were deleted by admin
+          setNews([]);
         }
       },
       err => {
@@ -237,6 +256,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       additionalImages: articleData.additionalImages || []
     };
 
+    hasLoadedNewsOnce.current = true;
     // Optimistic UI update
     setNews(prev => [newArticle, ...prev]);
 
@@ -253,11 +273,13 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...updatedFields,
       updatedAt: new Date().toISOString()
     };
+    hasLoadedNewsOnce.current = true;
     setNews(prev => prev.map(item => (item.id === id ? merged : item)));
     await saveNewsToFirestore(merged);
   };
 
   const deleteNews = async (id: string) => {
+    hasLoadedNewsOnce.current = true;
     setNews(prev => prev.filter(item => item.id !== id));
     await deleteNewsFromFirestore(id);
   };
@@ -266,6 +288,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const target = news.find(n => n.id === id);
     if (!target) return;
     const updated: NewsArticle = { ...target, isBreaking: !target.isBreaking };
+    hasLoadedNewsOnce.current = true;
     setNews(prev => prev.map(item => (item.id === id ? updated : item)));
     await saveNewsToFirestore(updated);
   };
@@ -274,6 +297,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const target = news.find(n => n.id === id);
     if (!target) return;
     const updated: NewsArticle = { ...target, isFeatured: !target.isFeatured };
+    hasLoadedNewsOnce.current = true;
     setNews(prev => prev.map(item => (item.id === id ? updated : item)));
     await saveNewsToFirestore(updated);
   };
@@ -283,6 +307,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!target) return;
     const nextStatus = target.status === 'published' ? 'draft' : 'published';
     const updated: NewsArticle = { ...target, status: nextStatus, updatedAt: new Date().toISOString() };
+    hasLoadedNewsOnce.current = true;
     setNews(prev => prev.map(item => (item.id === id ? updated : item)));
     await saveNewsToFirestore(updated);
   };
@@ -291,6 +316,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const target = news.find(n => n.id === id);
     if (!target) return;
     const updated: NewsArticle = { ...target, status: 'published', updatedAt: new Date().toISOString() };
+    hasLoadedNewsOnce.current = true;
     setNews(prev => prev.map(item => (item.id === id ? updated : item)));
     await saveNewsToFirestore(updated);
   };
@@ -299,6 +325,7 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const target = news.find(n => n.id === id);
     if (!target) return;
     const updated: NewsArticle = { ...target, status: 'draft', updatedAt: new Date().toISOString() };
+    hasLoadedNewsOnce.current = true;
     setNews(prev => prev.map(item => (item.id === id ? updated : item)));
     await saveNewsToFirestore(updated);
   };
