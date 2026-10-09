@@ -433,38 +433,42 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
                     {toBengaliNumber(item.views || 0)}
                   </td>
 
-                  {/* Actions (Requirement 7: Publish, Unpublish, Edit, and Delete actions) */}
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
+                  {/* Actions (Requirement 7 & Fix: Publish, Unpublish, Edit, and Delete actions) */}
+                  <td className="py-3 px-4 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5 shrink-0">
                       {/* Publish / Unpublish Action Button */}
                       {isPublished ? (
                         <button
+                          type="button"
                           onClick={() => handleUnpublish(item)}
                           disabled={isBusy}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50 shrink-0"
                           title="সংবাদটি অপ্রকাশিত / খসড়া করুন (Unpublish to Draft)"
                         >
                           <EyeOff className="w-3.5 h-3.5 text-amber-700" />
-                          <span className="hidden md:inline">আনপাবলিশ</span>
+                          <span className="hidden lg:inline">আনপাবলিশ</span>
                         </button>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => handlePublish(item)}
                           disabled={isBusy}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors cursor-pointer disabled:opacity-50 shrink-0"
                           title="সংবাদটি অবিলম্বে ওয়েবসাইটে প্রকাশ করুন (Publish Live)"
                         >
                           <Globe className="w-3.5 h-3.5" />
-                          <span className="hidden md:inline">পাবলিশ</span>
+                          <span className="hidden lg:inline">পাবলিশ</span>
                         </button>
                       )}
 
                       {/* Public Preview Button (if published) */}
                       {isPublished && onViewPublicArticle && (
                         <button
+                          type="button"
                           onClick={() => onViewPublicArticle(item.id)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
                           title="পাবলিক পেজে সরাসরি দেখুন"
+                          aria-label="পাবলিক ভিউ"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
@@ -472,20 +476,26 @@ export const AdminAllNews: React.FC<AdminAllNewsProps> = ({
 
                       {/* Edit Button */}
                       <button
+                        type="button"
                         onClick={() => onEditArticle(item)}
-                        className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer shrink-0"
                         title="সংবাদ সম্পাদনা করুন (Edit)"
+                        aria-label="সম্পাদনা"
                       >
                         <Edit className="w-4 h-4" />
+                        <span className="text-xs font-semibold hidden xl:inline">এডিট</span>
                       </button>
 
-                      {/* Delete Button */}
+                      {/* Delete Button (Restored, Highly visible with Red styling & Confirmation) */}
                       <button
+                        type="button"
                         onClick={() => setDeleteCandidate(item)}
-                        className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                        title="সংবাদটি স্থায়ীভাবে মুছে ফেলুন (Delete)"
+                        className="inline-flex items-center gap-1 p-1.5 sm:px-2 sm:py-1.5 rounded-lg text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors cursor-pointer shrink-0"
+                        title="সংবাদটি স্থায়ীভাবে মুছে ফেলুন (Delete)"
+                        aria-label="মুছে ফেলুন"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                        <span className="text-xs font-semibold hidden xl:inline">ডিলিট</span>
                       </button>
                     </div>
                   </td>
