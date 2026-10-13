@@ -15,7 +15,8 @@ export const OFFICIAL_ADMIN_EMAIL = 'nofstv.bd@gmail.com';
  * Only accounts explicitly approved by the system owner may access administrative capabilities.
  */
 export const AUTHORIZED_ADMIN_EMAILS: readonly string[] = Object.freeze([
-  'nofstv.bd@gmail.com'
+  'nofstv.bd@gmail.com',
+  'olpohasi@gmail.com'
 ]);
 
 /**
@@ -70,21 +71,24 @@ export async function adminSignIn(password: string, email: string = OFFICIAL_ADM
 }
 
 /**
- * Initializes the official admin account in Firebase Authentication if not created yet.
- * STRICT: Only allows initializing the approved official admin email.
+ * Initializes an authorized administrator account in Firebase Authentication if not created yet.
+ * STRICT: Only allows initializing approved admin emails from the allowlist.
  */
-export async function initializeAdminAccount(password: string): Promise<FirebaseUser> {
-  const email = OFFICIAL_ADMIN_EMAIL;
+export async function initializeAdminAccount(password: string, email: string = OFFICIAL_ADMIN_EMAIL): Promise<FirebaseUser> {
+  const targetEmail = (email || OFFICIAL_ADMIN_EMAIL).trim().toLowerCase();
+  if (!isAuthorizedAdminEmail(targetEmail)) {
+    throw new Error('অননুমোদিত অ্যাকাউন্ট: শুধুমাত্র অনুমোদিত অ্যাডমিন ইমেইল সক্রিয় করা যাবে।');
+  }
   if (!password || password.length < 6) {
     throw new Error('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
   }
   try {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const cred = await createUserWithEmailAndPassword(auth, targetEmail, password);
     return cred.user;
   } catch (err: unknown) {
     const error = err as { code?: string; message?: string };
     if (error.code === 'auth/email-already-in-use') {
-      throw new Error('অফিসিয়াল অ্যাডমিন অ্যাকাউন্ট ইতোমধ্যে তৈরি করা আছে। অনুগ্রহ করে সরাসরি লগইন করুন।');
+      throw new Error('এই অ্যাডমিন অ্যাকাউন্ট ইতোমধ্যে তৈরি করা আছে। অনুগ্রহ করে সরাসরি লগইন করুন।');
     } else if (error.code === 'auth/operation-not-allowed') {
       throw new Error(
         'Firebase Console-এ Email/Password অথেনটিকেশন চালু করা নেই। অনুগ্রহ করে Firebase Console > Authentication > Sign-in method-এ গিয়ে Email/Password প্রোভাইডার চালু (Enable) করুন।'
@@ -95,11 +99,15 @@ export async function initializeAdminAccount(password: string): Promise<Firebase
 }
 
 /**
- * Sends a password reset link to the official admin email.
+ * Sends a password reset link to an authorized admin email.
  */
-export async function resetAdminPassword(): Promise<void> {
+export async function resetAdminPassword(email: string = OFFICIAL_ADMIN_EMAIL): Promise<void> {
+  const targetEmail = (email || OFFICIAL_ADMIN_EMAIL).trim().toLowerCase();
+  if (!isAuthorizedAdminEmail(targetEmail)) {
+    throw new Error('শুধুমাত্র অনুমোদিত অ্যাডমিন ইমেইলে পাসওয়ার্ড রিসেট পাঠানো সম্ভব।');
+  }
   try {
-    await sendPasswordResetEmail(auth, OFFICIAL_ADMIN_EMAIL);
+    await sendPasswordResetEmail(auth, targetEmail);
   } catch (err: unknown) {
     const error = err as { code?: string; message?: string };
     throw new Error(error.message || 'পাসওয়ার্ড রিসেট ইমেইল পাঠানো সম্ভব হয়নি।');

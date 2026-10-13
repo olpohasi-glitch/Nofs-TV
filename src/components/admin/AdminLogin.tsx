@@ -13,7 +13,12 @@ import {
   Info
 } from 'lucide-react';
 import { useNews } from '../../context/NewsContext';
-import { resetAdminPassword, OFFICIAL_ADMIN_EMAIL } from '../../services/firebaseAuth';
+import {
+  resetAdminPassword,
+  OFFICIAL_ADMIN_EMAIL,
+  AUTHORIZED_ADMIN_EMAILS,
+  isAuthorizedAdminEmail
+} from '../../services/firebaseAuth';
 import { NOFS_TV_LOGO_URL } from '../../types';
 
 interface AdminLoginProps {
@@ -26,6 +31,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
   onBackToSite
 }) => {
   const { loginAdmin, setupAdminAccount, settings, isFirestoreConnected } = useNews();
+  const [selectedEmail, setSelectedEmail] = useState<string>(OFFICIAL_ADMIN_EMAIL);
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -38,17 +44,23 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
     e.preventDefault();
     setError('');
     setSuccessNotice('');
+
+    if (!isAuthorizedAdminEmail(selectedEmail)) {
+      setError('অননুমোদিত অ্যাকাউন্ট: এই ইমেইলটি NOFS TV অ্যাডমিনদের অনুমোদিত তালিকায় নেই। শুধুমাত্র অনুমোদিত অ্যাডমিন প্রবেশ করতে পারবেন।');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       if (isSetupMode) {
-        await setupAdminAccount(password);
-        setSuccessNotice('অ্যাডমিন অ্যাকাউন্ট সফলভাবে সক্রিয় করা হয়েছে! এখন লগইন সম্পন্ন হচ্ছে...');
+        await setupAdminAccount(password, selectedEmail);
+        setSuccessNotice('অ্যাডমিন অ্যাকাউন্ট সফলভাবে সক্রিয় করা হয়েছে! ড্যাশবোর্ডে প্রবেশ করা হচ্ছে...');
         setTimeout(() => {
           onLoginSuccess();
         }, 1000);
       } else {
-        await loginAdmin(password);
+        await loginAdmin(password, selectedEmail);
         onLoginSuccess();
       }
     } catch (err: unknown) {
@@ -62,7 +74,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
   const handlePasswordReset = async () => {
     setError('');
     try {
-      await resetAdminPassword();
+      await resetAdminPassword(selectedEmail);
       setResetSuccess(true);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'পাসওয়ার্ড রিসেট ব্যর্থ হয়েছে।';
@@ -138,19 +150,24 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              অফিশিয়াল অ্যাডমিন ইমেইল (Official Admin Email)
+              অনুমোদিত অ্যাডমিন ইমেইল (Authorized Admin Email)
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                disabled
-                value={OFFICIAL_ADMIN_EMAIL}
-                className="w-full pl-10 pr-3 py-2.5 bg-slate-950/60 border border-slate-700 rounded-lg text-sm text-slate-300 font-mono cursor-not-allowed"
-              />
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                value={selectedEmail}
+                onChange={e => setSelectedEmail(e.target.value)}
+                className="w-full pl-10 pr-3 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-red-600 transition-colors cursor-pointer"
+              >
+                {AUTHORIZED_ADMIN_EMAILS.map(em => (
+                  <option key={em} value={em} className="bg-slate-900 text-white">
+                    {em}
+                  </option>
+                ))}
+              </select>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              * নিরাপত্তা বিধিমালার কারণে শুধুমাত্র অফিসিয়াল অ্যাকাউন্টে প্রবেশাধিকার সংরক্ষিত।
+            <p className="text-[11px] text-slate-400 mt-1">
+              * কঠোর নিরাপত্তা: শুধুমাত্র অনুমোদিত অ্যাডমিন অ্যাকাউন্ট ছাড়া প্রবেশাধিকার সম্পূর্ণ সংরক্ষিত।
             </p>
           </div>
 
@@ -195,7 +212,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
             ) : isSetupMode ? (
               <>
                 <Shield className="w-4 h-4" />
-                <span>Firebase-এ অ্যাকাউন্ট সক্রিয় করুন</span>
+                <span>Firebase-এ অ্যাডমিন অ্যাকাউন্ট সক্রিয় করুন</span>
               </>
             ) : (
               <>
@@ -206,12 +223,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
           </button>
         </form>
 
-        {/* Toggle between Login and First-Time Setup */}
+        {/* Security Policy & Owner First-Time Init Option */}
         <div className="mt-6 pt-5 border-t border-slate-800 text-center">
-          <p className="text-xs text-slate-400 mb-2">
-            {isSetupMode
-              ? 'ইতিমধ্যে অ্যাকাউন্ট সক্রিয় করা আছে?'
-              : 'প্রথমবারের মতো অ্যাডমিন অ্যাকাউন্ট সেটআপ করতে চান?'}
+          <p className="text-[11px] text-slate-500 mb-2">
+            পাবলিক রেজিস্ট্রেশন সম্পূর্ণ নিষ্ক্রিয়। শুধুমাত্র নির্ধারিত অ্যাডমিন প্রবেশের যোগ্য।
           </p>
           <button
             type="button"
@@ -224,7 +239,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
           >
             {isSetupMode
               ? 'লগইন ফর্মে ফিরে যান'
-              : 'প্রথমবার অ্যাডমিন পাসওয়ার্ড সক্রিয় / তৈরি করুন'}
+              : 'প্রথমবার অ্যাডমিন পাসওয়ার্ড সক্রিয় / তৈরি করতে চান?'}
           </button>
         </div>
 
@@ -244,7 +259,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
             <KeyRound className="w-10 h-10 text-red-500 mx-auto mb-3" />
             <h3 className="text-lg font-bold mb-2">পাসওয়ার্ড রিসেট</h3>
             <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              <strong className="text-amber-300">{OFFICIAL_ADMIN_EMAIL}</strong>-এ Firebase-এর মাধ্যমে নিরাপদ পাসওয়ার্ড রিসেট লিঙ্ক পাঠানো হবে।
+              <strong className="text-amber-300">{selectedEmail}</strong>-এ Firebase-এর মাধ্যমে নিরাপদ পাসওয়ার্ড রিসেট লিঙ্ক পাঠানো হবে।
             </p>
 
             {resetSuccess ? (

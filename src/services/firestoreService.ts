@@ -46,7 +46,7 @@ const SETTINGS_DOC_ID = 'global';
 function assertAdminAuthorized() {
   const user = auth.currentUser;
   if (!user || !user.email || !isAuthorizedAdminEmail(user.email)) {
-    throw new Error('অননুমোদিত এক্সেস: শুধুমাত্র NOFS TV এর অনুমোদিত অ্যাডমিন (nofstv.bd@gmail.com) এই কাজটি করতে পারবেন।');
+    throw new Error('অননুমোদিত এক্সেস: শুধুমাত্র NOFS TV এর অনুমোদিত অ্যাডমিন এই কাজটি করতে পারবেন।');
   }
 }
 

@@ -7,10 +7,11 @@ service cloud.firestore {
     }
     
     // Official NOFS TV Administrator authorization:
-    // Strictly verifies email against the official authorized administrator account
+    // Strictly verifies email against the official authorized administrator accounts
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'nofstv.bd@gmail.com' ||
+        request.auth.token.email == 'olpohasi@gmail.com' ||
         (exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin')
       );

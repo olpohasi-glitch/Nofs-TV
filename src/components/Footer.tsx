@@ -24,7 +24,7 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenAdminLogin,
   onOpenEPaper
 }) => {
-  const { settings, categories } = useNews();
+  const { settings, categories, isAdminLoggedIn } = useNews();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -197,22 +197,32 @@ export const Footer: React.FC<FooterProps> = ({
               </p>
             </div>
 
-            <div className="pt-2">
-              <button
-                onClick={onOpenAdminLogin}
-                className="w-full py-2 px-3 rounded bg-red-900/60 hover:bg-red-800 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-red-700/50"
-              >
-                <Shield className="w-3.5 h-3.5" />
-                <span>নিউজ ডিরেক্টর ও অ্যাডমিন অ্যাক্সেস</span>
-              </button>
-            </div>
+            {isAdminLoggedIn && (
+              <div className="pt-2">
+                <button
+                  onClick={onOpenAdminLogin}
+                  className="w-full py-2 px-3 rounded bg-red-800 hover:bg-red-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-red-600/50"
+                >
+                  <Shield className="w-3.5 h-3.5 text-amber-300" />
+                  <span>অ্যাডমিন ড্যাশবোর্ড (লগইন সক্রিয়)</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Bottom copyright & attribution bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
           <p>
-            © 2026 <strong className="text-slate-300">NOFS TV</strong>. All Rights Reserved.
+            © 2026{' '}
+            <strong
+              className="text-slate-300 cursor-default select-none"
+              onDoubleClick={onOpenAdminLogin}
+              title={isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড' : undefined}
+            >
+              NOFS TV
+            </strong>
+            . All Rights Reserved.
           </p>
 
           <p className="text-slate-400 text-center sm:text-right">

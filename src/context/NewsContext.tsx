@@ -63,8 +63,8 @@ interface NewsContextType {
   isAdminLoggedIn: boolean;
   isAuthLoading: boolean;
   adminUser: { name: string; role: string; email: string };
-  loginAdmin: (password: string) => Promise<void>;
-  setupAdminAccount: (password: string) => Promise<void>;
+  loginAdmin: (password: string, email?: string) => Promise<void>;
+  setupAdminAccount: (password: string, email?: string) => Promise<void>;
   logoutAdmin: () => Promise<void>;
   // Firestore Connection State
   isFirestoreConnected: boolean;
@@ -219,16 +219,16 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const adminUser = {
     name: settings.founderName || 'M. Ajmol Hussain Jakir',
     role: settings.founderRole || 'প্রতিষ্ঠাতা ও প্রকাশক',
-    email: OFFICIAL_ADMIN_EMAIL
+    email: firebaseUser?.email || OFFICIAL_ADMIN_EMAIL
   };
 
   // Auth Actions
-  const loginAdmin = async (password: string) => {
-    await adminSignIn(password);
+  const loginAdmin = async (password: string, email?: string) => {
+    await adminSignIn(password, email);
   };
 
-  const setupAdminAccount = async (password: string) => {
-    await initializeAdminAccount(password);
+  const setupAdminAccount = async (password: string, email?: string) => {
+    await initializeAdminAccount(password, email);
   };
 
   const logoutAdmin = async () => {

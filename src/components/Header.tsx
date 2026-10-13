@@ -129,17 +129,20 @@ export const Header: React.FC<HeaderProps> = ({
               </a>
             </div>
 
-            <span className="text-slate-600">|</span>
-
-            {/* Admin shortcut */}
-            <button
-              onClick={onOpenAdminLogin}
-              className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-800 hover:bg-red-700 text-slate-200 hover:text-white transition-all text-xs font-medium cursor-pointer"
-              title="অ্যাডমিন ড্যাশবোর্ড"
-            >
-              <Shield className="w-3 h-3 text-red-400" />
-              <span>{isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড' : 'অ্যাডমিন লগইন'}</span>
-            </button>
+            {/* Admin shortcut: ONLY visible to authorized administrator when logged in */}
+            {isAdminLoggedIn && (
+              <>
+                <span className="text-slate-600">|</span>
+                <button
+                  onClick={onOpenAdminLogin}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-red-700 hover:bg-red-800 text-white transition-all text-xs font-semibold cursor-pointer shadow-xs"
+                  title="অ্যাডমিন ড্যাশবোর্ড"
+                >
+                  <Shield className="w-3 h-3 text-amber-300" />
+                  <span>অ্যাডমিন ড্যাশবোর্ড</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -282,15 +285,18 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
             <span>প্রতিষ্ঠাতা: {settings.founderName}</span>
-            <button
-              onClick={() => {
-                onOpenAdminLogin();
-                setMobileMenuOpen(false);
-              }}
-              className="text-red-400 hover:text-white font-semibold cursor-pointer"
-            >
-              অ্যাডমিন পোর্টাল →
-            </button>
+            {isAdminLoggedIn && (
+              <button
+                onClick={() => {
+                  onOpenAdminLogin();
+                  setMobileMenuOpen(false);
+                }}
+                className="text-amber-400 hover:text-white font-semibold cursor-pointer flex items-center gap-1"
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <span>অ্যাডমিন ড্যাশবোর্ড →</span>
+              </button>
+            )}
           </div>
         </div>
       )}

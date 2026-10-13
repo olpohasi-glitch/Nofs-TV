@@ -63,6 +63,18 @@ function MainNewsApp() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
+  // Global secret shortcut: Ctrl+Shift+A or Cmd+Shift+A to toggle Admin Login
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        handleOpenAdminLogin();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAdminLoggedIn]);
+
   // Navigation handlers
   const handleNavigateHome = () => {
     setSelectedArticleId(null);
@@ -161,6 +173,11 @@ function MainNewsApp() {
 
   // If Admin Login page is active
   if (currentView === 'admin-login') {
+    if (isAdminLoggedIn) {
+      setCurrentView('admin-dashboard');
+      window.location.hash = 'admin';
+      return null;
+    }
     return (
       <AdminLogin
         onLoginSuccess={() => {
