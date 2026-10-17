@@ -17,31 +17,50 @@ import { EPaperModal } from './components/EPaperModal';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminDashboardLayout } from './components/admin/AdminDashboardLayout';
 import { PublicView } from './types';
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+function safeClearHash() {
+  try {
+    if (window.location.hash && window.location.hash !== '' && window.location.hash !== '#') {
+      window.location.hash = '';
+    }
+  } catch (err) {
+    console.warn('Could not clear hash:', err);
+  }
+}
 
 function parseHashRoute(): {
   view: PublicView | 'admin-dashboard';
   articleId: string | null;
   category: string | null;
 } {
-  const hash = window.location.hash.replace(/^#/, '');
-  if (hash === 'admin' || hash === 'admin-dashboard') {
-    return { view: 'admin-dashboard', articleId: null, category: null };
+  try {
+    const rawHash = window.location.hash || '';
+    const hash = rawHash.replace(/^#\/?/, '').trim();
+    if (!hash) {
+      return { view: 'home', articleId: null, category: null };
+    }
+    if (hash === 'admin' || hash === 'admin-dashboard') {
+      return { view: 'admin-dashboard', articleId: null, category: null };
+    }
+    if (hash === 'admin-login') {
+      return { view: 'admin-login', articleId: null, category: null };
+    }
+    if (hash.startsWith('article/')) {
+      const id = hash.replace('article/', '').trim();
+      return { view: id ? 'article' : 'home', articleId: id || null, category: null };
+    }
+    if (hash.startsWith('category/')) {
+      const cat = decodeURIComponent(hash.replace('category/', '')).trim();
+      return { view: cat ? 'category' : 'home', articleId: null, category: cat || null };
+    }
+    if (hash === 'search') {
+      return { view: 'search', articleId: null, category: null };
+    }
+    return { view: 'home', articleId: null, category: null };
+  } catch {
+    return { view: 'home', articleId: null, category: null };
   }
-  if (hash === 'admin-login') {
-    return { view: 'admin-login', articleId: null, category: null };
-  }
-  if (hash.startsWith('article/')) {
-    const id = hash.replace('article/', '');
-    return { view: 'article', articleId: id, category: null };
-  }
-  if (hash.startsWith('category/')) {
-    const cat = decodeURIComponent(hash.replace('category/', ''));
-    return { view: 'category', articleId: null, category: cat };
-  }
-  if (hash === 'search') {
-    return { view: 'search', articleId: null, category: null };
-  }
-  return { view: 'home', articleId: null, category: null };
 }
 
 function MainNewsApp() {
@@ -174,9 +193,25 @@ function MainNewsApp() {
   // If Admin Login page is active
   if (currentView === 'admin-login') {
     if (isAdminLoggedIn) {
-      setCurrentView('admin-dashboard');
-      window.location.hash = 'admin';
-      return null;
+      return (
+        <AdminDashboardLayout
+          onBackToSite={() => {
+            setCurrentView('home');
+            history.pushState(null, '', window.location.pathname);
+          }}
+          onLogout={() => {
+            setCurrentView('home');
+            history.pushState(null, '', window.location.pathname);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onViewPublicArticle={id => {
+            setSelectedArticleId(id);
+            setCurrentView('article');
+            window.location.hash = `article/${id}`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      );
     }
     return (
       <AdminLogin

@@ -84,7 +84,7 @@ export interface SiteSettings {
   addressSylhet: string;
   facebookUrl: string;
   youtubeUrl: string;
-  tiktokUrl: string;
+  tiktokUrl?: string;
   aboutText: string;
   logoUrl?: string;
 }

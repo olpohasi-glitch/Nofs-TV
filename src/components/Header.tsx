@@ -129,20 +129,24 @@ export const Header: React.FC<HeaderProps> = ({
               </a>
             </div>
 
-            {/* Admin shortcut: ONLY visible to authorized administrator when logged in */}
-            {isAdminLoggedIn && (
-              <>
-                <span className="text-slate-600">|</span>
-                <button
-                  onClick={onOpenAdminLogin}
-                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-red-700 hover:bg-red-800 text-white transition-all text-xs font-semibold cursor-pointer shadow-xs"
-                  title="অ্যাডমিন ড্যাশবোর্ড"
-                >
-                  <Shield className="w-3 h-3 text-amber-300" />
-                  <span>অ্যাডমিন ড্যাশবোর্ড</span>
-                </button>
-              </>
-            )}
+            <span className="text-slate-600">|</span>
+
+            {/* Admin access button */}
+            <button
+              onClick={onOpenAdminLogin}
+              className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs transition-all cursor-pointer shadow-xs ${
+                isAdminLoggedIn
+                  ? 'bg-red-700 hover:bg-red-800 text-white font-semibold'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium'
+              }`}
+              title={isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড' : 'অ্যাডমিন লগইন'}
+            >
+              <Shield className={`w-3 h-3 ${isAdminLoggedIn ? 'text-amber-300' : 'text-red-400'}`} />
+              <span>{isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড' : 'অ্যাডমিন লগইন'}</span>
+              {isAdminLoggedIn && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -285,36 +289,34 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
             <span>প্রতিষ্ঠাতা: {settings.founderName}</span>
-            {isAdminLoggedIn && (
-              <button
-                onClick={() => {
-                  onOpenAdminLogin();
-                  setMobileMenuOpen(false);
-                }}
-                className="text-amber-400 hover:text-white font-semibold cursor-pointer flex items-center gap-1"
-              >
-                <Shield className="w-3.5 h-3.5 text-amber-400" />
-                <span>অ্যাডমিন ড্যাশবোর্ড →</span>
-              </button>
-            )}
+            <button
+              onClick={() => {
+                onOpenAdminLogin();
+                setMobileMenuOpen(false);
+              }}
+              className="text-amber-400 hover:text-white font-semibold cursor-pointer flex items-center gap-1"
+            >
+              <Shield className="w-3.5 h-3.5 text-amber-400" />
+              <span>{isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড →' : 'অ্যাডমিন লগইন →'}</span>
+            </button>
           </div>
         </div>
       )}
 
-      {/* BREAKING NEWS Ticker */}
-      <div className="bg-red-50 border-b border-red-200 py-1.5 px-4 overflow-hidden">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
-          {/* Badge */}
-          <div className="shrink-0 flex items-center gap-1.5 bg-red-700 text-white text-xs font-bold px-2.5 py-1 rounded shadow-xs uppercase tracking-wider">
-            <Flame className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-            <span>ব্রেকিং নিউজ</span>
-          </div>
+      {/* BREAKING NEWS Ticker: ONLY shown when real published breaking news is active */}
+      {activeBreaking.length > 0 && (
+        <div className="bg-red-50 border-b border-red-200 py-1.5 px-4 overflow-hidden">
+          <div className="max-w-7xl mx-auto flex items-center gap-3">
+            {/* Badge */}
+            <div className="shrink-0 flex items-center gap-1.5 bg-red-700 text-white text-xs font-bold px-2.5 py-1 rounded shadow-xs uppercase tracking-wider">
+              <Flame className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+              <span>ব্রেকিং নিউজ</span>
+            </div>
 
-          {/* Marquee Ticker */}
-          <div className="overflow-hidden relative flex-1 text-sm text-red-950 font-medium">
-            <div className="animate-ticker inline-block whitespace-nowrap">
-              {activeBreaking.length > 0 ? (
-                activeBreaking.map((item, idx) => (
+            {/* Marquee Ticker */}
+            <div className="overflow-hidden relative flex-1 text-sm text-red-950 font-medium">
+              <div className="animate-ticker inline-block whitespace-nowrap">
+                {activeBreaking.map((item, idx) => (
                   <span
                     key={item.id}
                     onClick={() => {
@@ -328,17 +330,12 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     • {item.text}
                   </span>
-                ))
-              ) : (
-                <span>
-                  • ব্রেকিং নিউজ: সর্বশেষ গুরুত্বপূর্ণ সংবাদ জানতে NOFS TV-এর
-                  সঙ্গে থাকুন।
-                </span>
-              )}
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </header>
   );
 };

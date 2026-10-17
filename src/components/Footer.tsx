@@ -197,11 +197,12 @@ export const Footer: React.FC<FooterProps> = ({
               </p>
             </div>
 
+            {/* Admin control: STRICTLY visible only when admin is already authenticated */}
             {isAdminLoggedIn && (
               <div className="pt-2">
                 <button
                   onClick={onOpenAdminLogin}
-                  className="w-full py-2 px-3 rounded bg-red-800 hover:bg-red-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-red-600/50"
+                  className="w-full py-2.5 px-3 rounded text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border bg-red-800 hover:bg-red-700 border-red-600/50"
                 >
                   <Shield className="w-3.5 h-3.5 text-amber-300" />
                   <span>অ্যাডমিন ড্যাশবোর্ড (লগইন সক্রিয়)</span>

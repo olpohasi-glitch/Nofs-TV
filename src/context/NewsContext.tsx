@@ -122,13 +122,23 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [isFirestoreConnected, setIsFirestoreConnected] = useState<boolean>(false);
 
-  // 1. Subscribe to Firebase Auth
+  // 1. Subscribe to Firebase Auth with safety timeout
   useEffect(() => {
+    // Safety fallback: Never keep app in loading state more than 1.5 seconds if Firebase Auth hangs
+    const safetyTimer = setTimeout(() => {
+      setIsAuthLoading(false);
+    }, 1500);
+
     const unsubscribe = subscribeToAuth(user => {
+      clearTimeout(safetyTimer);
       setFirebaseUser(user);
       setIsAuthLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, []);
 
   const isAdminLoggedIn = Boolean(
@@ -187,25 +197,9 @@ export const NewsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let autoSeedingStarted = false;
 
     const unsubNews = subscribeToNews(
-      async firestoreArticles => {
-        if (firestoreArticles.length > 0) {
-          hasLoadedNewsOnce.current = true;
-          setNews(firestoreArticles);
-        } else if (isAdminLoggedIn && !hasLoadedNewsOnce.current && !autoSeedingStarted) {
-          // If Firestore news collection is empty upon authorized admin login, auto-seed initial database documents
-          autoSeedingStarted = true;
-          try {
-            const res = await seedInitialFirestoreData();
-            if (res.seeded) {
-              hasLoadedNewsOnce.current = true;
-            }
-          } catch (err) {
-            console.warn('Auto-seed note:', err);
-          }
-        } else if (hasLoadedNewsOnce.current) {
-          // All articles were deleted by admin
-          setNews([]);
-        }
+      firestoreArticles => {
+        hasLoadedNewsOnce.current = true;
+        setNews(firestoreArticles);
       },
       err => {
         console.warn('News subscription notice:', err);
