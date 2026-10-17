@@ -9,7 +9,8 @@ import {
   Shield,
   CloudSun,
   Flame,
-  MapPin
+  MapPin,
+  Calendar
 } from 'lucide-react';
 import { useNews } from '../context/NewsContext';
 import { getCurrentBengaliDate } from '../utils/bengali';
@@ -57,40 +58,59 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="w-full bg-white border-b border-gray-200">
       {/* Top Utility Bar */}
-      <div className="bg-slate-900 text-slate-300 text-xs py-1.5 px-4 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          {/* Bengali Date | Location | Live Temperature | Founder (small & elegant) */}
-          <div className="flex items-center space-x-2.5 flex-wrap">
-            <span className="font-medium text-slate-200">
-              {bengaliDate.fullDateString}
+      <div className="bg-slate-900 text-slate-300 text-xs py-2 px-4 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          {/* Bengali & Gregorian Dates | Location | Live Temperature | Founder */}
+          <div className="flex items-center gap-2.5 flex-wrap justify-center sm:justify-start">
+            {/* Gregorian Date in Bengali & English starting with Saturday / শনিবার */}
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium text-white">
+              <Calendar className="w-3.5 h-3.5 text-red-500 shrink-0" />
+              <span className="font-bengali-num text-[13px] sm:text-xs font-bold text-white tracking-wide leading-normal">
+                {bengaliDate.gregorianWithDay}
+              </span>
+              <span className="text-slate-300 font-sans text-xs hidden sm:inline-block font-semibold">
+                ({bengaliDate.englishDate})
+              </span>
             </span>
 
-            <span className="text-slate-600">|</span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+
+            {/* Official Bengali Era (বঙ্গাব্দ) Badge */}
+            <span className="inline-flex items-center gap-1 whitespace-nowrap text-amber-300 font-semibold bg-slate-800/95 px-2.5 py-1 rounded text-xs border border-slate-700 shadow-xs tracking-wide leading-normal">
+              <span className="font-bengali-num text-[12px] sm:text-xs text-amber-300 font-semibold">
+                {bengaliDate.bengaliEra}
+              </span>
+            </span>
+
+            <span className="text-slate-600 hidden md:inline">•</span>
 
             {/* Sylhet Live Weather */}
-            <div className="flex items-center text-amber-400 gap-1 font-medium">
-              <MapPin className="w-3 h-3 text-red-400" />
-              <span className="text-slate-200">সিলেট</span>
-              <span className="text-slate-500">|</span>
-              <CloudSun className="w-3.5 h-3.5 text-amber-400 ml-0.5" />
-              <span className="text-amber-300" title={`সিলেটের বর্তমান আবহাওয়া: ${sylhetWeather.conditionText}`}>
+            <div className="inline-flex items-center text-amber-400 gap-1.5 font-medium whitespace-nowrap">
+              <MapPin className="w-3 h-3 text-red-400 shrink-0" />
+              <span className="text-slate-200 font-medium">সিলেট</span>
+              <span className="text-slate-500">•</span>
+              <CloudSun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span
+                className="text-amber-300 font-semibold font-bengali-num text-[13px] sm:text-xs"
+                title={`সিলেটের বর্তমান আবহাওয়া: ${sylhetWeather.conditionText}`}
+              >
                 {sylhetWeather.temperatureText}
               </span>
             </div>
 
-            <span className="hidden lg:inline-block text-slate-600">|</span>
+            <span className="hidden xl:inline-block text-slate-600">•</span>
 
             {/* Small tasteful founder credit */}
-            <span className="hidden lg:inline-block text-slate-400 text-[11px]">
+            <span className="hidden xl:inline-block text-slate-400 text-[11px] whitespace-nowrap">
               প্রতিষ্ঠাতা ও প্রকাশক: <strong className="text-slate-200 font-semibold">{settings.founderName}</strong>
             </span>
           </div>
 
           {/* Right utility links & social */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 shrink-0">
             <button
               onClick={onOpenEPaper}
-              className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors cursor-pointer whitespace-nowrap"
             >
               <Newspaper className="w-3.5 h-3.5 text-red-500" />
               <span>ই-পেপার</span>
@@ -118,35 +138,34 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 ▶
               </a>
-              <a
-                href={settings.tiktokUrl}
-                target="_blank"
-                rel="noreferrer"
-                title="TikTok"
-                className="w-5 h-5 rounded-full bg-slate-800 hover:bg-neutral-700 flex items-center justify-center text-white transition-colors text-[10px] font-bold"
-              >
-                ♪
-              </a>
+              {settings.tiktokUrl && (
+                <a
+                  href={settings.tiktokUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="TikTok"
+                  className="w-5 h-5 rounded-full bg-slate-800 hover:bg-neutral-700 flex items-center justify-center text-white transition-colors text-[10px] font-bold"
+                >
+                  ♪
+                </a>
+              )}
             </div>
 
-            <span className="text-slate-600">|</span>
-
-            {/* Admin access button */}
-            <button
-              onClick={onOpenAdminLogin}
-              className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs transition-all cursor-pointer shadow-xs ${
-                isAdminLoggedIn
-                  ? 'bg-red-700 hover:bg-red-800 text-white font-semibold'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium'
-              }`}
-              title={isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড' : 'অ্যাডমিন লগইন'}
-            >
-              <Shield className={`w-3 h-3 ${isAdminLoggedIn ? 'text-amber-300' : 'text-red-400'}`} />
-              <span>{isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড' : 'অ্যাডমিন লগইন'}</span>
-              {isAdminLoggedIn && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              )}
-            </button>
+            {/* Admin shortcut: ONLY visible to authorized administrator when logged in */}
+            {isAdminLoggedIn && (
+              <>
+                <span className="text-slate-600">|</span>
+                <button
+                  onClick={onOpenAdminLogin}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs bg-red-700 hover:bg-red-800 text-white font-semibold cursor-pointer shadow-xs whitespace-nowrap"
+                  title="অ্যাডমিন ড্যাশবোর্ড"
+                >
+                  <Shield className="w-3 h-3 text-amber-300" />
+                  <span>অ্যাডমিন ড্যাশবোর্ড</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

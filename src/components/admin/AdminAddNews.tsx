@@ -50,10 +50,10 @@ export const AdminAddNews: React.FC<AdminAddNewsProps> = ({
     editingArticle?.imageCaption || ''
   );
   const [publishDate, setPublishDate] = useState(
-    editingArticle?.publishDate || bengaliDate.gregorianDate
+    editingArticle?.publishDate || bengaliDate.gregorianWithDay
   );
   const [publishTime, setPublishTime] = useState(
-    editingArticle?.publishTime || 'দুপুর ১২:০০'
+    editingArticle?.publishTime || bengaliDate.formattedTime || 'দুপুর ১২:০০'
   );
   const [tagsInput, setTagsInput] = useState(
     editingArticle?.tags?.join(', ') || 'বাংলাদেশ, সংবাদ'

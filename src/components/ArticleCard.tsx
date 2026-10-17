@@ -68,7 +68,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
               <User className="w-3.5 h-3.5 text-red-600" />
               {article.reporterName}
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 shrink-0 whitespace-nowrap font-bengali-num font-medium text-gray-600">
               <Clock className="w-3.5 h-3.5 text-gray-400" />
               {article.publishDate}
             </span>
@@ -110,7 +110,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
             <span className="font-medium text-gray-700">
               {article.reporterName}
             </span>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 shrink-0 whitespace-nowrap font-bengali-num font-medium text-gray-600">
               <Clock className="w-3 h-3 text-gray-400" />
               {article.publishTime || article.publishDate}
             </span>
@@ -138,10 +138,10 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           <h4 className="text-sm font-bold text-gray-900 group-hover:text-red-700 transition-colors line-clamp-2 leading-snug">
             {article.title}
           </h4>
-          <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-1">
-            <span className="text-red-600 font-semibold">{article.category}</span>
+          <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-1 flex-wrap">
+            <span className="text-red-600 font-semibold shrink-0">{article.category}</span>
             <span>•</span>
-            <span>{article.publishTime || article.publishDate}</span>
+            <span className="shrink-0 whitespace-nowrap font-bengali-num font-medium text-gray-600">{article.publishTime || article.publishDate}</span>
           </div>
         </div>
       </div>
@@ -184,11 +184,11 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center justify-between text-[11px] text-gray-500 mt-3 pt-2 border-t border-gray-100">
+        <div className="flex items-center justify-between text-[11px] text-gray-500 mt-3 pt-2 border-t border-gray-100 gap-2">
           <span className="font-medium text-gray-700 line-clamp-1">
             {article.reporterName}
           </span>
-          <span className="flex items-center gap-1 shrink-0">
+          <span className="flex items-center gap-1 shrink-0 whitespace-nowrap font-bengali-num font-medium text-gray-600">
             <Clock className="w-3 h-3 text-gray-400" />
             {article.publishTime || article.publishDate}
           </span>

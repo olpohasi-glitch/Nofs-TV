@@ -166,10 +166,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   className="py-3 group cursor-pointer flex items-start gap-3"
                 >
                   <span
-                    className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-bengali-num ${
                       idx < 3
                         ? 'bg-red-700 text-white'
-                        : 'bg-gray-100 text-gray-600'
+                        : 'bg-gray-100 text-gray-700'
                     }`}
                   >
                     {toBengaliNumber(idx + 1)}
@@ -181,7 +181,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-1">
                       <span className="text-red-600 font-semibold">{item.category}</span>
                       <span>•</span>
-                      <span>{item.publishTime || item.publishDate}</span>
+                      <span className="font-bengali-num font-medium text-gray-600">{item.publishTime || item.publishDate}</span>
                     </div>
                   </div>
                 </div>

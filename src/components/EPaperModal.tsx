@@ -64,10 +64,12 @@ export const EPaperModal: React.FC<EPaperModalProps> = ({ onClose }) => {
         <div className="max-w-4xl w-full bg-white text-slate-900 rounded-lg shadow-2xl p-6 sm:p-10 border border-slate-300">
           {/* Newspaper Masthead */}
           <div className="border-b-4 border-slate-900 pb-4 mb-6 text-center">
-            <div className="flex items-center justify-between text-xs text-gray-600 border-b border-gray-200 pb-2 mb-3">
-              <span>বর্ষ ২ • সংখ্যা ৩৪১</span>
-              <span className="font-bold">{bengaliDate.fullDateString}</span>
-              <span>মূল্য: ৫.০০ টাকা</span>
+            <div className="flex items-center justify-between text-xs text-gray-600 border-b border-gray-200 pb-2 mb-3 flex-wrap gap-2">
+              <span className="whitespace-nowrap font-bengali-num">বর্ষ ২ • সংখ্যা ৩৪১</span>
+              <span className="font-bold whitespace-nowrap text-slate-900 font-bengali-num">
+                {bengaliDate.gregorianWithDay} ({bengaliDate.englishDate}) | {bengaliDate.bengaliEra}
+              </span>
+              <span className="whitespace-nowrap font-bengali-num">মূল্য: ৫.০০ টাকা</span>
             </div>
 
             <div className="flex items-center justify-center py-2">

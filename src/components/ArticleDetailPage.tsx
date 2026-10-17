@@ -199,16 +199,16 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
               </div>
 
               <div className="flex flex-col sm:items-end text-xs text-gray-500">
-                <div className="flex items-center gap-1.5 font-medium text-gray-700">
-                  <Calendar className="w-3.5 h-3.5 text-red-600" />
-                  <span>প্রকাশ: {article.publishDate}</span>
-                  {article.publishTime && <span>({article.publishTime})</span>}
+                <div className="flex items-center gap-1.5 font-semibold text-gray-800 flex-wrap font-bengali-num">
+                  <Calendar className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <span className="whitespace-nowrap">প্রকাশ: {article.publishDate}</span>
+                  {article.publishTime && <span className="whitespace-nowrap">({article.publishTime})</span>}
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-500">
-                  <span>{readingTime}</span>
+                  <span className="font-bengali-num">{readingTime}</span>
                   <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
+                  <span className="flex items-center gap-1 font-bengali-num">
+                    <Eye className="w-3 h-3 text-gray-400" />
                     <span>{toBengaliNumber(article.views || 1)} বার পঠিত</span>
                   </span>
                 </div>
