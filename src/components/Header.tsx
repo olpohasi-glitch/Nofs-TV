@@ -77,33 +77,17 @@ export const Header: React.FC<HeaderProps> = ({
       {/* 8. TOP INFORMATION BAR */}
       <div className="bg-slate-900 text-slate-300 text-xs py-2 px-3 sm:px-4 border-b border-slate-800">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
-          {/* Left: Bangladesh Date + English Date + Bengali Era + Sylhet Weather */}
+          {/* Left: Bangladesh Date + Sylhet Weather */}
           <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-center md:justify-start">
-            {/* Bengali Gregorian Date (শনিবার, ১৭ অক্টোবর ২০২৬) */}
+            {/* Bengali Date: দিনের নাম, বাংলা মাস, বাংলা সাল এবং বঙ্গাব্দ (যেমন: মঙ্গলবার, ২০ অক্টোবর ২০২৬ ৪ কার্তিক ১৪৩৩ বঙ্গাব্দ) */}
             <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium text-white">
               <Calendar className="w-3.5 h-3.5 text-red-500 shrink-0" />
               <span className="font-bengali-num text-[13px] sm:text-xs font-bold text-white tracking-wide leading-normal">
-                {bengaliDate.gregorianWithDay}
+                {bengaliDate.fullDateString}
               </span>
             </span>
 
             <span className="text-slate-600 hidden sm:inline">•</span>
-
-            {/* English Date starting with Saturday (Saturday, 17 October 2026) */}
-            <span className="inline-flex items-center gap-1 whitespace-nowrap font-sans text-[11px] sm:text-xs font-semibold text-slate-100 bg-slate-800/90 px-2 py-0.5 rounded border border-slate-700/80">
-              <span>{bengaliDate.englishWithDay}</span>
-            </span>
-
-            <span className="text-slate-600 hidden sm:inline">•</span>
-
-            {/* Official Bengali Era (বঙ্গাব্দ) Badge */}
-            <span className="inline-flex items-center gap-1 whitespace-nowrap text-amber-300 font-semibold bg-slate-800/95 px-2.5 py-0.5 rounded text-xs border border-slate-700 shadow-xs tracking-wide leading-normal">
-              <span className="font-bengali-num text-[12px] sm:text-xs text-amber-300 font-semibold">
-                {bengaliDate.bengaliEra}
-              </span>
-            </span>
-
-            <span className="text-slate-600 hidden md:inline">•</span>
 
             {/* Sylhet Live Weather */}
             <div className="inline-flex items-center text-amber-400 gap-1.5 font-medium whitespace-nowrap">
@@ -307,9 +291,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-xs text-slate-300 font-medium">বাংলা অনলাইন নিউজ পোর্টাল</span>
             </div>
             <div className="text-left sm:text-right text-xs">
-              <div className="font-bold text-white font-bengali-num">{bengaliDate.gregorianWithDay}</div>
-              <div className="text-[11px] text-slate-300 font-sans font-medium">{bengaliDate.englishWithDay}</div>
-              <div className="text-[11px] text-amber-400 font-semibold font-bengali-num">{bengaliDate.bengaliEra}</div>
+              <div className="font-bold text-white font-bengali-num">{bengaliDate.fullDateString}</div>
             </div>
           </div>
 

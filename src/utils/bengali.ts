@@ -14,8 +14,6 @@ export interface BengaliDateInfo {
   dayName: string;
   gregorianDate: string;
   gregorianWithDay: string;
-  englishDate: string;
-  englishWithDay: string;
   bengaliEra: string;
   bengaliDateOnly: string;
   fullDateString: string;
@@ -139,18 +137,6 @@ export function getCurrentBengaliDate(targetDate: Date = new Date()): BengaliDat
   const gregorianDate = `${toBengaliNumber(bstDay)} ${GREGORIAN_MONTHS_BN[bstMonth - 1]} ${toBengaliNumber(bstYear)}`;
   const gregorianWithDay = `${dayName}, ${gregorianDate}`;
 
-  // English (Gregorian) date representation
-  const MONTHS_EN = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  const DAYS_EN = [
-    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
-  ];
-  const englishDay = DAYS_EN[bstWeekdayIndex] || 'Saturday';
-  const englishDate = `${bstDay} ${MONTHS_EN[bstMonth - 1]} ${bstYear}`;
-  const englishWithDay = `${englishDay}, ${englishDate}`;
-
   // Time in Bengali (e.g. রাত ৮:৫০)
   let period = 'সকাল';
   if (bstHour >= 12 && bstHour < 15) period = 'দুপুর';
@@ -208,14 +194,13 @@ export function getCurrentBengaliDate(targetDate: Date = new Date()): BengaliDat
   const bengaliDateOnly = `${toBengaliNumber(bDay)} ${bMonthName} ${toBengaliNumber(bYear)}`;
   const bengaliEra = `${bengaliDateOnly} বঙ্গাব্দ`;
   const season = BANGLA_SEASONS[Math.floor(bMonthIndex / 2)];
-  const fullDateString = `${gregorianWithDay} (${englishWithDay}) | ${bengaliEra}`;
+  // Exact user format: 'মঙ্গলবার, ২০ অক্টোবর ২০২৬ ৪ কার্তিক ১৪৩৩ বঙ্গাব্দ'
+  const fullDateString = `${gregorianWithDay} ${bengaliEra}`;
 
   return {
     dayName,
     gregorianDate,
     gregorianWithDay,
-    englishDate,
-    englishWithDay,
     bengaliEra,
     bengaliDateOnly,
     fullDateString,

@@ -67,7 +67,7 @@ export const EPaperModal: React.FC<EPaperModalProps> = ({ onClose }) => {
             <div className="flex items-center justify-between text-xs text-gray-600 border-b border-gray-200 pb-2 mb-3 flex-wrap gap-2">
               <span className="whitespace-nowrap font-bengali-num">বর্ষ ২ • সংখ্যা ৩৪১</span>
               <span className="font-bold whitespace-nowrap text-slate-900 font-bengali-num">
-                {bengaliDate.gregorianWithDay} ({bengaliDate.englishDate}) | {bengaliDate.bengaliEra}
+                {bengaliDate.fullDateString}
               </span>
               <span className="whitespace-nowrap font-bengali-num">মূল্য: ৫.০০ টাকা</span>
             </div>
