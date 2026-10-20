@@ -7,9 +7,7 @@ import React, { useState } from 'react';
 import { NewsProvider, useNews } from './context/NewsContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
-import { HeroSection } from './components/HeroSection';
-import { CategorySection } from './components/CategorySection';
-import { VideoSection } from './components/VideoSection';
+import { HomePage } from './components/HomePage';
 import { ArticleDetailPage } from './components/ArticleDetailPage';
 import { SearchSystem } from './components/SearchSystem';
 import { CategoryArchivePage } from './components/CategoryArchivePage';
@@ -17,6 +15,7 @@ import { EPaperModal } from './components/EPaperModal';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminDashboardLayout } from './components/admin/AdminDashboardLayout';
 import { PublicView } from './types';
+import { isDemoArticle } from './data/initialData';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function safeClearHash() {
@@ -106,7 +105,7 @@ function MainNewsApp() {
   };
 
   const handleSelectCategory = (catName: string) => {
-    if (catName === 'হোম') {
+    if (catName === 'হোম' || catName === 'শীর্ষ সংবাদ') {
       handleNavigateHome();
       return;
     }
@@ -227,24 +226,12 @@ function MainNewsApp() {
     );
   }
 
-  // Filter published news for the public view
-  const publishedNews = news.filter(n => n.status === 'published');
-
-  // Specific Category helper filters
-  const nationalArticles = publishedNews.filter(n => n.category === 'জাতীয়');
-  const politicsArticles = publishedNews.filter(n => n.category === 'রাজনীতি');
-  const sylhetArticles = publishedNews.filter(n => n.category === 'সিলেট');
-  const internationalArticles = publishedNews.filter(n => n.category === 'আন্তর্জাতিক');
-  const sportsArticles = publishedNews.filter(n => n.category === 'খেলাধুলা');
-  const entertainmentArticles = publishedNews.filter(n => n.category === 'বিনোদন');
-  const technologyArticles = publishedNews.filter(n => n.category === 'প্রযুক্তি');
-  const educationArticles = publishedNews.filter(n => n.category === 'শিক্ষা');
-  const economyArticles = publishedNews.filter(n => n.category === 'অর্থনীতি');
-  const lifestyleArticles = publishedNews.filter(n => n.category === 'লাইফস্টাইল');
+  // Filter published news for the public view (Never show demo or draft news)
+  const publishedNews = news.filter(n => n.status === 'published' && !isDemoArticle(n));
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 selection:bg-red-700 selection:text-white">
-      {/* Header */}
+      {/* Header: Top Bar -> Main Header -> Category Nav -> Breaking News */}
       <Header
         currentView={currentView as PublicView}
         selectedCategory={selectedCategory}
@@ -258,109 +245,13 @@ function MainNewsApp() {
 
       {/* Main Content Area */}
       <main className="flex-1">
-        {/* HOMEPAGE VIEW */}
+        {/* HOMEPAGE VIEW: Exact Bangladeshi News Portal Hierarchy */}
         {currentView === 'home' && (
-          <>
-            {/* Hero News Section */}
-            <HeroSection
-              articles={publishedNews}
-              onOpenArticle={handleOpenArticle}
-              onSelectCategory={handleSelectCategory}
-            />
-
-            {/* জাতীয় সংবাদ */}
-            <CategorySection
-              categoryTitle="জাতীয় সংবাদ"
-              categorySlug="national"
-              articles={nationalArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('জাতীয়')}
-            />
-
-            {/* রাজনীতি */}
-            <CategorySection
-              categoryTitle="রাজনীতি"
-              categorySlug="politics"
-              articles={politicsArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('রাজনীতি')}
-            />
-
-            {/* সিলেট সংবাদ */}
-            <CategorySection
-              categoryTitle="সিলেট সংবাদ"
-              categorySlug="sylhet"
-              articles={sylhetArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('সিলেট')}
-            />
-
-            {/* আন্তর্জাতিক */}
-            <CategorySection
-              categoryTitle="আন্তর্জাতিক"
-              categorySlug="international"
-              articles={internationalArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('আন্তর্জাতিক')}
-            />
-
-            {/* Multimedia Video Broadcast Section */}
-            <VideoSection />
-
-            {/* খেলাধুলা */}
-            <CategorySection
-              categoryTitle="খেলাধুলা"
-              categorySlug="sports"
-              articles={sportsArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('খেলাধুলা')}
-            />
-
-            {/* অর্থনীতি */}
-            <CategorySection
-              categoryTitle="অর্থনীতি"
-              categorySlug="economy"
-              articles={economyArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('অর্থনীতি')}
-            />
-
-            {/* প্রযুক্তি */}
-            <CategorySection
-              categoryTitle="তথ্যপ্রযুক্তি ও গ্যাজেট"
-              categorySlug="technology"
-              articles={technologyArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('প্রযুক্তি')}
-            />
-
-            {/* শিক্ষা */}
-            <CategorySection
-              categoryTitle="শিক্ষা ও ক্যাম্পাস"
-              categorySlug="education"
-              articles={educationArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('শিক্ষা')}
-            />
-
-            {/* বিনোদন */}
-            <CategorySection
-              categoryTitle="বিনোদন ও সংস্কৃতি"
-              categorySlug="entertainment"
-              articles={entertainmentArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('বিনোদন')}
-            />
-
-            {/* লাইফস্টাইল */}
-            <CategorySection
-              categoryTitle="লাইফস্টাইল ও স্বাস্থ্য"
-              categorySlug="lifestyle"
-              articles={lifestyleArticles}
-              onOpenArticle={handleOpenArticle}
-              onViewAllCategory={() => handleSelectCategory('লাইফস্টাইল')}
-            />
-          </>
+          <HomePage
+            articles={publishedNews}
+            onOpenArticle={handleOpenArticle}
+            onSelectCategory={handleSelectCategory}
+          />
         )}
 
         {/* ARTICLE DETAIL VIEW */}

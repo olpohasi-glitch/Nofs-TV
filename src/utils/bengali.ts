@@ -208,7 +208,7 @@ export function getCurrentBengaliDate(targetDate: Date = new Date()): BengaliDat
   const bengaliDateOnly = `${toBengaliNumber(bDay)} ${bMonthName} ${toBengaliNumber(bYear)}`;
   const bengaliEra = `${bengaliDateOnly} বঙ্গাব্দ`;
   const season = BANGLA_SEASONS[Math.floor(bMonthIndex / 2)];
-  const fullDateString = `${gregorianWithDay} (${englishDate}) | ${bengaliEra}`;
+  const fullDateString = `${gregorianWithDay} (${englishWithDay}) | ${bengaliEra}`;
 
   return {
     dayName,
