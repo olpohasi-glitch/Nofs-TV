@@ -68,11 +68,14 @@ export const HomePage: React.FC<HomePageProps> = ({
     );
   }
 
-  // 1. MAIN NEWS GRID: STRICT FEATURED NEWS RULE
-  // ONLY articles where isFeatured === true AND status === 'published'
+  // 1. MAIN NEWS GRID: Lead / Featured Story + Supporting Stories
+  // If an article is marked isFeatured, use it as lead.
+  // Otherwise, fallback to the latest published news article so the lead area displays a news item with photo & headline from data.
   const featuredArticles = articles.filter(a => a.isFeatured);
-  const leadFeatured = featuredArticles[0];
-  const supportingFeatured = featuredArticles.slice(1, 4);
+  const leadFeatured = featuredArticles.length > 0 ? featuredArticles[0] : (articles.length > 0 ? articles[0] : null);
+  const supportingFeatured = featuredArticles.length > 0
+    ? featuredArticles.slice(1, 4)
+    : articles.filter(a => a.id !== leadFeatured?.id).slice(0, 3);
 
   // 2. LATEST NEWS (সর্বশেষ সংবাদ): Sorted by newest date/time
   const latestArticles = [...articles]
@@ -123,18 +126,16 @@ export const HomePage: React.FC<HomePageProps> = ({
             </span>
           </div>
 
-          {featuredArticles.length > 0 ? (
+          {leadFeatured ? (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* বাম: বড় Featured News (Lead Story) */}
               <div className={`${supportingFeatured.length > 0 ? 'lg:col-span-8' : 'lg:col-span-12'}`}>
-                {leadFeatured && (
-                  <ArticleCard
-                    article={leadFeatured}
-                    variant="large"
-                    onClick={() => onOpenArticle(leadFeatured.id)}
-                    onSelectCategory={onSelectCategory}
-                  />
-                )}
+                <ArticleCard
+                  article={leadFeatured}
+                  variant="large"
+                  onClick={() => onOpenArticle(leadFeatured.id)}
+                  onSelectCategory={onSelectCategory}
+                />
               </div>
 
               {/* ডান: ২/৩টি গুরুত্বপূর্ণ News */}
@@ -173,14 +174,14 @@ export const HomePage: React.FC<HomePageProps> = ({
               )}
             </div>
           ) : (
-            /* Clean Empty State when Featured News = OFF */
+            /* Clean Empty State only if no news at all */
             <div className="p-8 rounded-lg bg-gray-50 border border-dashed border-gray-300 text-center">
               <Newspaper className="w-10 h-10 text-gray-400 mx-auto mb-2" />
               <h3 className="text-lg font-bold text-gray-800 mb-1">
                 এই মুহূর্তে কোনো শীর্ষ সংবাদ নির্বাচিত হয়নি।
               </h3>
               <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
-                অ্যাডমিন কর্তৃক কোনো সংবাদকে ‘শীর্ষ সংবাদ’ হিসেবে নির্বাচিত করা হলে তা এখানে প্রধান সংবাদরূপে প্রদর্শিত হবে। নিচের সর্বশেষ সংবাদসমূহ দেখুন।
+                অ্যাডমিন কর্তৃক কোনো সংবাদ প্রকাশিত হলে তা এখানে প্রধান সংবাদরূপে প্রদর্শিত হবে।
               </p>
             </div>
           )}

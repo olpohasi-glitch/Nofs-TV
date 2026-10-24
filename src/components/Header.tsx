@@ -6,7 +6,6 @@ import {
   Radio,
   Newspaper,
   ChevronRight,
-  Shield,
   CloudSun,
   Flame,
   MapPin,
@@ -45,20 +44,9 @@ export const Header: React.FC<HeaderProps> = ({
   const bengaliDate = getCurrentBengaliDate();
   const sylhetWeather = useSylhetWeather();
 
-  // Strict Real Breaking News: ONLY published articles where isBreaking === true
-  const realPublishedBreaking = news
-    .filter(n => n.status === 'published' && n.isBreaking && !isDemoArticle(n))
-    .map(n => ({
-      id: `art-break-${n.id}`,
-      text: n.title,
-      articleId: n.id,
-      isActive: true,
-      createdAt: n.createdAt
-    }));
-
-  const activeBreaking = realPublishedBreaking.length > 0
-    ? realPublishedBreaking
-    : breakingNews.filter(b => b.isActive);
+  // Permanent ticker text as requested:
+  // “সত্যের সন্ধানে, মানুষের পাশে — NOFS TV | দেশ-বিদেশের সর্বশেষ সংবাদ জানতে চোখ রাখুন NOFS TV-তে।”
+  const PERMANENT_TICKER_TEXT = "সত্যের সন্ধানে, মানুষের পাশে — NOFS TV | দেশ-বিদেশের সর্বশেষ সংবাদ জানতে চোখ রাখুন NOFS TV-তে।";
 
   // Exact requested categories order:
   // শীর্ষ সংবাদ | সর্বশেষ | সিলেট | জাতীয় | রাজনীতি | আন্তর্জাতিক | খেলাধুলা | বিনোদন | প্রযুক্তি | শিক্ষা | অর্থনীতি | লাইফস্টাইল
@@ -192,28 +180,14 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden md:inline">সংবাদ খুঁজুন</span>
           </button>
 
-          {/* Admin Login: Only entry point to the secure admin area */}
+          {/* Admin Login: হলুদ রঙের তালা আইকনসহ 'লগইন' লেখা */}
           <button
             onClick={onOpenAdminLogin}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-xs whitespace-nowrap ${
-              isAdminLoggedIn
-                ? 'bg-red-700 hover:bg-red-800 text-white'
-                : 'bg-slate-900 hover:bg-red-700 text-white'
-            }`}
-            title={isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড' : 'অ্যাডমিন লগইন'}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold bg-slate-900 hover:bg-red-700 text-white transition-all cursor-pointer shadow-xs whitespace-nowrap"
+            title={isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড' : 'লগইন'}
           >
-            {isAdminLoggedIn ? (
-              <>
-                <Shield className="w-3.5 h-3.5 text-amber-300" />
-                <span className="hidden sm:inline">ড্যাশবোর্ড</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              </>
-            ) : (
-              <>
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-                <span>লগইন</span>
-              </>
-            )}
+            <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>লগইন</span>
           </button>
         </div>
       </div>
@@ -320,8 +294,8 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               className="text-amber-400 hover:text-white font-semibold cursor-pointer flex items-center gap-1"
             >
-              <Shield className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isAdminLoggedIn ? 'অ্যাডমিন ড্যাশবোর্ড →' : 'অ্যাডমিন লগইন →'}</span>
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>লগইন →</span>
             </button>
           </div>
         </div>
@@ -336,31 +310,33 @@ export const Header: React.FC<HeaderProps> = ({
             <span>ব্রেকিং নিউজ</span>
           </div>
 
-          {/* Marquee Ticker or Clean Empty State */}
-          <div className="overflow-hidden relative flex-1 text-sm font-medium">
-            {activeBreaking.length > 0 ? (
-              <div className="animate-ticker inline-block whitespace-nowrap text-red-950">
-                {activeBreaking.map((item, idx) => (
-                  <span
-                    key={item.id}
-                    onClick={() => {
-                      if (item.articleId) {
-                        onOpenArticle(item.articleId);
-                      }
-                    }}
-                    className={`inline-block mr-12 hover:text-red-700 hover:underline cursor-pointer ${
-                      idx === 0 ? 'font-semibold' : ''
-                    }`}
-                  >
-                    • {item.text}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="text-xs text-slate-500 font-normal italic">
-                এই মুহূর্তে কোনো ব্রেকিং নিউজ নেই।
+          {/* Marquee Ticker: ডান থেকে বামে চলমান (Marquee/Scrolling) */}
+          <div className="overflow-hidden relative flex-1 text-sm font-medium flex items-center min-w-0">
+            {/* @ts-ignore */}
+            <marquee
+              behavior="scroll"
+              direction="left"
+              scrollamount={6}
+              className="w-full text-red-950 block text-sm font-medium cursor-pointer"
+              onMouseEnter={(e: React.MouseEvent<HTMLElement>) => {
+                try {
+                  (e.currentTarget as any).stop?.();
+                } catch {}
+              }}
+              onMouseLeave={(e: React.MouseEvent<HTMLElement>) => {
+                try {
+                  (e.currentTarget as any).start?.();
+                } catch {}
+              }}
+            >
+              <span className="inline-block mr-16 font-semibold">
+                • {PERMANENT_TICKER_TEXT}
               </span>
-            )}
+              <span className="inline-block mr-16 font-semibold">
+                • {PERMANENT_TICKER_TEXT}
+              </span>
+            {/* @ts-ignore */}
+            </marquee>
           </div>
         </div>
       </div>
