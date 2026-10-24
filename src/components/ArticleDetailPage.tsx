@@ -18,6 +18,7 @@ import {
 import { useNews } from '../context/NewsContext';
 import { ArticleCard } from './ArticleCard';
 import { calculateReadingTime, toBengaliNumber } from '../utils/bengali';
+import { updateArticleSEO, restoreDefaultSEO } from '../utils/seo';
 
 interface ArticleDetailPageProps {
   articleId: string;
@@ -50,8 +51,12 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
     if (article) {
       incrementViews(article.id);
+      updateArticleSEO(article);
     }
-  }, [articleId]);
+    return () => {
+      restoreDefaultSEO();
+    };
+  }, [articleId, article]);
 
   if (!article) {
     return (
@@ -85,8 +90,19 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
     c => c.articleId === article.id && c.status === 'approved'
   );
 
+  const articleShareUrl =
+    typeof window !== 'undefined' &&
+    !window.location.hostname.includes('localhost') &&
+    !window.location.hostname.includes('run.app')
+      ? `${window.location.origin}/#article/${article.id}`
+      : `https://nofstv.netlify.app/#article/${article.id}`;
+
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    try {
+      navigator.clipboard.writeText(articleShareUrl);
+    } catch {
+      // fallback
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -335,22 +351,24 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({
               <div className="flex items-center space-x-2">
                 <a
                   href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                    window.location.href
+                    articleShareUrl
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  title="Facebook-এ শেয়ার করুন"
                 >
                   <span>Facebook</span>
                 </a>
 
                 <a
                   href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                    article.title + ' ' + window.location.href
+                    article.title + '\n' + articleShareUrl
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  title="WhatsApp-এ শেয়ার করুন"
                 >
                   <span>WhatsApp</span>
                 </a>

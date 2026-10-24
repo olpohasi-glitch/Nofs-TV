@@ -1,6 +1,6 @@
 {
   "name": "NOFS TV - বাংলা অনলাইন নিউজ পোর্টাল",
-  "description": "NOFS TV (নফস টিভি) - সত্যের সন্ধানে, মানুষের পাশে। সিলেটভিত্তিক নির্ভরযোগ্য বাংলা অনলাইন নিউজ পোর্টাল। সিলেট নিউজ, Sylhet News, জাতীয় ও আন্তর্জাতিক সংবাদ।",
+  "description": "সত্যের সন্ধানে, মানুষের পাশে। সিলেটসহ দেশ-বিদেশের সর্বশেষ সংবাদ জানতে ভিজিট করুন NOFS TV।",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
